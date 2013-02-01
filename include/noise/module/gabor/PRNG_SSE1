@@ -1,0 +1,126 @@
+#pragma once
+
+
+#include <climits>
+#include <cmath>
+
+
+#include <noise/Math.hpp>
+
+
+
+
+namespace noise
+{
+
+	namespace module
+	{
+
+		namespace gabor
+		{
+
+			template< typename ValueType >
+			class PRNG_Vector
+			{
+
+			public:
+
+				typedef Math< ValueType >		M;
+
+
+
+			private:
+
+				typename M::Vector4I		x;
+
+
+
+			public:
+
+				PRNG( const typename M::Vector4I& seed ):
+				  x( seed )
+				{
+				}
+
+				typename M::Vector4I
+				getSeed()
+				{
+					return x;
+				}
+
+				typename M::Vector4I
+				operator()()
+				{
+					static VECTOR_ALIGN( unsigned int	primeA[ 4 ] ) = { 3039177861u, 3039177861u, 3039177861u, 3039177861u };
+					typename M::Vector4I	primeV = M::loadFromMemory( (typename M::ScalarI*) primeA );
+
+					x = M::multiply( x, primeV );
+					return x;
+				}
+
+				typename M::Vector4I
+				uniformNormalized()
+				{
+					static VECTOR_ALIGN( ValueType	uintMaxA[ 4 ] ) = { ValueType( UINT_MAX ), ValueType( UINT_MAX ), ValueType( UINT_MAX ), ValueType( UINT_MAX ) };
+
+					typename M::Vector4F	nextRand = M::intToFloat( (*this)() );
+					typename M::Vector4F	uintMaxV = M::loadFromMemory( uintMaxA );
+					return M::divide( nextRand, uintMaxV );
+				}
+
+				typename M::Vector4I
+				uniformRangeMinusOneToOne()
+				{
+					static VECTOR_ALIGN( ValueType	minusOneA[ 4 ] ) = { ValueType( -1.0 ), ValueType( -1.0 ), ValueType( -1.0 ), ValueType( -1.0 ) };
+					static VECTOR_ALIGN( ValueType	twoA[ 4 ] ) = { ValueType( 2.0 ), ValueType( 2.0 ), ValueType( 2.0 ), ValueType( 2.0 ) };
+
+					typename M::Vector4F	minuxOneV = M::loadFromMemory( minusOneA );
+					typename M::Vector4F	twoV = M::loadFromMemory( twoA );
+
+					return M::add( minusOneV, M::multiply( uniformNormalized(), twoV ) );
+				}
+
+				ValueType
+				uniformRange( ValueType min, ValueType max )
+				{
+					return min + (uniformNormalized() * (max - min));
+				}
+
+				unsigned int
+				poisson( ValueType mean )
+				{
+					ValueType		g = std::exp( -mean );
+					unsigned int	em = 0;
+					ValueType		t = uniformNormalized();
+
+					while( t > g )
+					{
+						++em;
+						t *= uniformNormalized();
+					}
+
+					return em;
+				}
+
+				unsigned int
+				poissonG( ValueType g )
+				{
+					unsigned int	em = 0;
+					ValueType		t = uniformNormalized();
+
+					while( t > g )
+					{
+						++em;
+						t *= uniformNormalized();
+					}
+
+					return em;
+				}
+
+			};
+
+		}
+
+	}
+
+}
