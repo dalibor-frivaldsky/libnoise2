@@ -9,8 +9,8 @@
 #include <noise/Math.hpp>
 #include <noise/module/Module.hpp>
 #include <noise/module/gabor/GaborBase.hpp>
-#include <noise/module/gabor/PRNG.hpp>
-#include <noise/module/gabor/PRNG_Vector.hpp>
+#include <noise/module/gabor/Prng.hpp>
+#include <noise/module/gabor/PrngVector.hpp>
 
 
 
@@ -39,8 +39,8 @@ namespace noise
 			typedef Module< ValueType, Dimension >		ModuleType;
 			typedef gabor::GaborBase< ValueType >		BaseType;
 			typedef Gabor< ValueType, Dimension >		ThisType;
-			typedef gabor::PRNG< ValueType >			PRNGType;
-			typedef gabor::PRNG_Vector< ValueType >		PRNG_VectorType;
+			typedef gabor::Prng< ValueType >			PrngType;
+			typedef gabor::PrngVector< ValueType >		PrngVectorType;
 			typedef Math< ValueType >					M;
 
 
@@ -70,53 +70,32 @@ namespace noise
 				int			i = int( intX );
 				int			j = int( intY );
 				ValueType	noise = ValueType( 0.0 );
+				typename M::Vector4F	fracXV = M::vectorizeOne( x - intX );
+				typename M::Vector4F	fracYV = M::vectorizeOne( y - intY );
 
-				static VECTOR_ALIGN( int		diA[ 12 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1, 0, 0, 0 };
-				static VECTOR_ALIGN( int		djA[ 12 ] ) = { -1, 0, 1, -1, 0, 1, -1, 0, 1, 0, 0, 0 };
+				static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+				static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 
-				VECTOR_ALIGN( unsigned int	mortonA[ 12 ] );
-				
-				M::Vector4I		seedV = M::vectorizeOne( (M::ScalarI) this->GetSeed() );
 				M::Vector4I		iV = M::vectorizeOne( (M::ScalarI) i );
 				M::Vector4I		jV = M::vectorizeOne( (M::ScalarI) j );
 
-				ValueType	poissonG = std::exp( -(this->GetImpulseDensity() * this->GetKernelRadius() * this->GetKernelRadius()) );
-
-				for( int m = 0; m < 3; ++m )
+				for( int m = 0; m < 2; ++m )
 				{
-					M::Vector4I		diV = M::loadFromMemory( diA + (m * 4) );
-					M::Vector4I		djV = M::loadFromMemory( djA + (m * 4) );
-					M::Vector4I		diiV = M::add( diV, iV );
-					M::Vector4I		djjV = M::add( djV, jV );
-
-					M::Vector4I		mortonV = mortonVectorized( diiV, djjV );
-					M::storeToMemory( (M::ScalarI*) mortonA + (m * 4), mortonV );
+					typename M::Vector4I	diV = M::loadFromMemory( diA + (m * 4) );
+					typename M::Vector4I	djV = M::loadFromMemory( djA + (m * 4) );
+					typename M::Vector4I	diiV = M::add( diV, iV );
+					typename M::Vector4I	djjV = M::add( djV, jV );
+					typename M::Vector4F	xV = M::subtract( fracXV, M::intToFloat( diV ) );
+					typename M::Vector4F	yV = M::subtract( fracYV, M::intToFloat( djV ) );
+					typename M::Vector4I	mortonV = mortonVectorized( diiV, djjV );
+					
+					noise += cellVectorized( mortonV, xV, yV );
 				}
 
-				VECTOR_ALIGN( unsigned int	sA[ 9 ] );
-				VECTOR_ALIGN( unsigned int	numberOfImpulsesA[ 9 ] );
-				VECTOR_ALIGN( ValueType		xA[ 9 ] );
-				VECTOR_ALIGN( ValueType		yA[ 9 ] );
-				for( int c = 0; c < 9; ++c )
-				{
-					unsigned int	s = mortonA[ c ];
-					if( s == 0 )
-					{
-						s = 1;
-					}
-
-					PRNGType		prng( s );
-					numberOfImpulsesA[ c ] = prng.poissonG( poissonG );
-					sA[ c ] = prng.getSeed();
-					xA[ c ] = fracX - diA[ c ];
-					yA[ c ] = fracY - djA[ c ];
-				}
-
-				noise += cellVectorized( sA, numberOfImpulsesA, xA, yA );
-				noise += cellVectorized( sA + 4, numberOfImpulsesA + 4, xA + 4, yA + 4 );
 				for( int c = 8; c < 9; ++c )
 				{
-					noise += cell( sA[ c ], numberOfImpulsesA[ c ], xA[ c ], yA[ c ] );
+					unsigned int	s = morton( diA[ c ] + i, djA[ c ] + j );
+					noise += cell( s, fracX - diA[ c ], fracY - djA[ c ] );
 				}
 
 				return noise / (ValueType( 3.0 ) * std::sqrt( variance() ));
@@ -128,44 +107,54 @@ namespace noise
 
 			inline
 			ValueType
-			cell( unsigned int s, unsigned int numberOfImpulses, ValueType x, ValueType y ) const
+			cell( unsigned int s, ValueType x, ValueType y ) const
 			{
-				PRNGType	prng( s );
-				ValueType	noise = ValueType( 0.0 );
+				ValueType		noise = ValueType( 0.0 );
+
+				PrngType		prng( s );
+				ValueType		numberOfImpulsesPerCell = this->GetImpulseDensity() * this->GetKernelRadius() * this->GetKernelRadius();
+				unsigned int	numberOfImpulses = prng.poisson( numberOfImpulsesPerCell );
 
 				int		toCalculate = 0;
-				SSE_ALIGN( ValueType	xInput[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				SSE_ALIGN( ValueType	yInput[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				SSE_ALIGN( ValueType	wiVector[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	xInputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	yInputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	wiInputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	F0InputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	omega0InputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+
 
 				for( unsigned int i = 0; i < numberOfImpulses; ++i )
 				{
 					ValueType	xi = prng.uniformNormalized();
 					ValueType	yi = prng.uniformNormalized();
-					ValueType	wi = prng.uniformRange( -1.0, +1.0 );
+					ValueType	wi = prng.uniformRangeMinusOneToOne();
+					ValueType	F0 = prng.uniformRange( this->GetFrequencyRangeStart(), this->GetFrequencyRangeEnd() );
+					ValueType	omega0 = prng.uniformRange( this->GetAngularRangeStart(), this->GetAngularRangeEnd() );
 					ValueType	xix = x - xi;
 					ValueType	yiy = y - yi;
 
 					if( ((xix * xix) + (yiy * yiy)) < ValueType( 1.0 ) )
 					{
-						xInput[ toCalculate ] = xix * this->GetKernelRadius();
-						yInput[ toCalculate ] = yiy * this->GetKernelRadius();
-						wiVector[ toCalculate ] = wi;
+						xInputA[ toCalculate ] = xix * this->GetKernelRadius();
+						yInputA[ toCalculate ] = yiy * this->GetKernelRadius();
+						wiInputA[ toCalculate ] = wi;
+						F0InputA[ toCalculate ] = F0;
+						omega0InputA[ toCalculate ] = omega0;
 						++toCalculate;
 					}
 
 					if( toCalculate == 4 ||
 						(i == numberOfImpulses - 1 && toCalculate > 0) )
 					{
-						M::Vector4F		xInputV = M::loadFromMemory( xInput );
-						M::Vector4F		yInputV = M::loadFromMemory( yInput );
-						M::Vector4F		kV = M::vectorizeOne( this->GetK() );
-						M::Vector4F		aV = M::vectorizeOne( this->GetA() );
-						M::Vector4F		f0V = M::vectorizeOne( this->GetF0() );
-						M::Vector4F		omega0V = M::vectorizeOne( this->GetOmega0() );
-						M::Vector4F		wiV = M::loadFromMemory( wiVector );
+						typename M::Vector4F		xInputV = M::loadFromMemory( xInputA );
+						typename M::Vector4F		yInputV = M::loadFromMemory( yInputA );
+						typename M::Vector4F		kV = M::vectorizeOne( this->GetK() );
+						typename M::Vector4F		aV = M::vectorizeOne( this->GetA() );
+						typename M::Vector4F		F0V = M::loadFromMemory( F0InputA );
+						typename M::Vector4F		omega0V = M::loadFromMemory( omega0InputA );
+						typename M::Vector4F		wiV = M::loadFromMemory( wiInputA );
 
-						M::Vector4F		gaborV = gaborVectorized( kV, aV, f0V, omega0V, xInputV, yInputV );
+						typename M::Vector4F		gaborV = gaborVectorized( kV, aV, F0V, omega0V, xInputV, yInputV );
 						gaborV = M::multiply( wiV, gaborV );
 
 						SSE_ALIGN( ValueType	gaborResult[ 4 ] );
@@ -185,25 +174,29 @@ namespace noise
 
 			inline
 			ValueType
-			cellVectorized( unsigned int* sA, unsigned int* numberOfImpulsesA, ValueType* xA, ValueType* yA ) const
+			cellVectorized( const typename M::Vector4I sV, const typename M::Vector4F xV, const typename M::Vector4F yV ) const
 			{
 				ValueType	noise = ValueType( 0.0 );
 
+				PrngVectorType			prngVector( sV );
+				typename M::Vector4F	impulseDensityV = M::vectorizeOne( this->GetImpulseDensity() );
+				typename M::Vector4F	kernelRadiusV = M::vectorizeOne( this->GetKernelRadius() );
+				typename M::Vector4F	numberOfImpulsesPerCellV = M::multiply( impulseDensityV, M::multiply( kernelRadiusV, kernelRadiusV ) );
+				typename M::Vector4I	numberOfImpulsesV = prngVector.poisson( numberOfImpulsesPerCellV );
+
+				VECTOR4_ALIGN( unsigned int	numberOfImpulsesA[ 4 ] );
+				M::storeToMemory( (typename M::ScalarI*) numberOfImpulsesA, numberOfImpulsesV );
+
 				unsigned int			maxNumberOfImpulses = findMax( numberOfImpulsesA );
-				typename M::Vector4I	sV = M::loadFromMemory( (typename M::ScalarI*) sA );
-				typename M::Vector4I	numberOfImpulsesV = M::loadFromMemory( (typename M::ScalarI*) numberOfImpulsesA );
-				typename M::Vector4F	xV = M::loadFromMemory( xA );
-				typename M::Vector4F	yV = M::loadFromMemory( yA );
 				typename M::Vector4I	oneIV = M::vectorizeOne( (typename M::ScalarI) 1 );
 				typename M::Vector4F	oneFV = M::vectorizeOne( ValueType( 1.0 ) );
-				typename M::Vector4F	kernelRadiusV = M::vectorizeOne( this->GetKernelRadius() );
-
-				VECTOR_ALIGN( ValueType		xInputA[ 4 * maxNumberOfImpulses ] );
-				VECTOR_ALIGN( ValueType		yInputA[ 4 * maxNumberOfImpulses ] );
-				VECTOR_ALIGN( ValueType		wiInputA[ 4 * maxNumberOfImpulses ] );
-				VECTOR_ALIGN( unsigned int	calcMaskA[ 4 * maxNumberOfImpulses ] );
-
-				PRNG_VectorType		prngVector( sV );
+				
+				VECTOR4_ALIGN( ValueType		xInputA[ 4 * maxNumberOfImpulses ] );
+				VECTOR4_ALIGN( ValueType		yInputA[ 4 * maxNumberOfImpulses ] );
+				VECTOR4_ALIGN( ValueType		wiInputA[ 4 * maxNumberOfImpulses ] );
+				VECTOR4_ALIGN( ValueType		F0InputA[ 4 * maxNumberOfImpulses ] );
+				VECTOR4_ALIGN( ValueType		omega0InputA[ 4 * maxNumberOfImpulses ] );
+				VECTOR4_ALIGN( unsigned int		calcMaskA[ 4 * maxNumberOfImpulses ] );
 
 				for( unsigned int i = 0; i < maxNumberOfImpulses; ++i )
 				{
@@ -211,6 +204,8 @@ namespace noise
 					typename M::Vector4F	xiV = prngVector.uniformNormalized();
 					typename M::Vector4F	yiV = prngVector.uniformNormalized();
 					typename M::Vector4F	wiV = prngVector.uniformRangeMinusOneToOne();
+					typename M::Vector4F	F0V = prngVector.uniformRange( this->GetFrequencyRangeStart(), this->GetFrequencyRangeEnd() );
+					typename M::Vector4F	omega0V = prngVector.uniformRange( this->GetAngularRangeStart(), this->GetAngularRangeEnd() );
 					typename M::Vector4F	xixV = M::subtract( xV, xiV );
 					typename M::Vector4F	yiyV = M::subtract( yV, yiV );
 
@@ -223,15 +218,19 @@ namespace noise
 					M::storeToMemory( xInputA + (i * 4 ), xixV );
 					M::storeToMemory( yInputA + (i * 4 ), yiyV );
 					M::storeToMemory( wiInputA + (i * 4 ), wiV );
+					M::storeToMemory( F0InputA + (i * 4 ), F0V );
+					M::storeToMemory( omega0InputA + (i * 4 ), omega0V );
 					M::storeToMemory( (typename M::ScalarI*) calcMaskA + (i * 4 ), calcMaskV );
 
 					numberOfImpulsesV = M::subtract( numberOfImpulsesV, _mm_and_si128( impulseMaskV, oneIV ) );
 				}
 
 				int		toCalculate = 0;
-				VECTOR_ALIGN( ValueType	xInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR_ALIGN( ValueType	yInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR_ALIGN( ValueType	wiInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	xInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	yInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	wiInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	F0InputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
+				VECTOR4_ALIGN( ValueType	omega0InputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
 				for( int g = 0; g < maxNumberOfImpulses * 4; ++g )
 				{
 					if( calcMaskA[ g ] == 0xffffffff )
@@ -239,6 +238,8 @@ namespace noise
 						xInputPartA[ toCalculate ] = xInputA[ g ];
 						yInputPartA[ toCalculate ] = yInputA[ g ];
 						wiInputPartA[ toCalculate ] = wiInputA[ g ];
+						F0InputPartA[ toCalculate ] = F0InputA[ g ];
+						omega0InputPartA[ toCalculate ] = omega0InputA[ g ];
 						++toCalculate;
 					}
 
@@ -249,17 +250,17 @@ namespace noise
 						typename M::Vector4F		yInputV = M::loadFromMemory( yInputPartA );
 						typename M::Vector4F		kV = M::vectorizeOne( this->GetK() );
 						typename M::Vector4F		aV = M::vectorizeOne( this->GetA() );
-						typename M::Vector4F		f0V = M::vectorizeOne( this->GetF0() );
-						typename M::Vector4F		omega0V = M::vectorizeOne( this->GetOmega0() );
+						typename M::Vector4F		F0V = M::loadFromMemory( F0InputPartA );
+						typename M::Vector4F		omega0V = M::loadFromMemory( omega0InputPartA );
 						typename M::Vector4F		wiV = M::loadFromMemory( wiInputPartA );
 
 						xInputV = M::multiply( xInputV, kernelRadiusV );
 						yInputV = M::multiply( yInputV, kernelRadiusV );
 
-						typename M::Vector4F		gaborV = gaborVectorized( kV, aV, f0V, omega0V, xInputV, yInputV );
+						typename M::Vector4F		gaborV = gaborVectorized( kV, aV, F0V, omega0V, xInputV, yInputV );
 						gaborV = M::multiply( wiV, gaborV );
 
-						VECTOR_ALIGN( ValueType	gaborResult[ 4 ] );
+						VECTOR4_ALIGN( ValueType	gaborResult[ 4 ] );
 						M::storeToMemory( gaborResult, gaborV );
 
 						for( int j = 0; j < toCalculate; ++j )
@@ -275,11 +276,33 @@ namespace noise
 			}
 
 			inline
+			unsigned int
+			morton( unsigned int x, unsigned int y ) const
+			{
+				unsigned int	z = 0;
+
+				for( unsigned int i = 0; i < (sizeof( unsigned int ) * CHAR_BIT); ++i )
+				{
+					z |= ((x & (1 << i)) << i) | ((y & (1 << i)) << (i + 1));
+				}
+
+				z += this->GetSeed();
+
+				if( z == 0 )
+				{
+					z = 1;
+				}
+
+				return z;
+			}
+
+			inline
 			M::Vector4I
 			mortonVectorized( const M::Vector4I& xV, const M::Vector4I& yV ) const
 			{
 				M::Vector4I		zV = _mm_setzero_si128();
 				M::Vector4I		oneV = M::vectorizeOne( (M::ScalarI) 1 );
+				M::Vector4I		seedV = M::vectorizeOne( (M::ScalarI) this->GetSeed() );
 
 				for( unsigned int i = 0; i < (sizeof( unsigned int ) * CHAR_BIT); ++i )
 				{
@@ -295,9 +318,11 @@ namespace noise
 					zV = _mm_or_si128( zV, tmp );
 				}
 
-				/*M::Vector4I		isZero = _mm_cmpeq_epi32( zV, _mm_setzero_si128() );
+				zV = M::add( zV, seedV );
+
+				M::Vector4I		isZero = _mm_cmpeq_epi32( zV, _mm_setzero_si128() );
 				M::Vector4I		toOne = _mm_srli_epi32( isZero, 31 );
-				zV = M::add( zV, toOne );*/
+				zV = M::add( zV, toOne );
 
 				return zV;
 			}

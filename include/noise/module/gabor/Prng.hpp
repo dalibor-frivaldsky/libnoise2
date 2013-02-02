@@ -17,7 +17,7 @@ namespace noise
 		{
 
 			template< typename ValueType >
-			class PRNG
+			class Prng
 			{
 
 			private:
@@ -28,12 +28,7 @@ namespace noise
 
 			public:
 
-				PRNG():
-				  x( 0 )
-				{
-				}
-
-				PRNG( unsigned int seed ):
+				Prng( unsigned int seed ):
 				  x( seed )
 				{
 				}
@@ -64,6 +59,12 @@ namespace noise
 				}
 
 				ValueType
+				uniformRangeMinusOneToOne()
+				{
+					return ValueType( -1.0 ) + (uniformNormalized() * ValueType( 2.0 ));
+				}
+
+				ValueType
 				uniformRange( ValueType min, ValueType max )
 				{
 					return min + (uniformNormalized() * (max - min));
@@ -73,21 +74,6 @@ namespace noise
 				poisson( ValueType mean )
 				{
 					ValueType		g = std::exp( -mean );
-					unsigned int	em = 0;
-					ValueType		t = uniformNormalized();
-
-					while( t > g )
-					{
-						++em;
-						t *= uniformNormalized();
-					}
-
-					return em;
-				}
-
-				unsigned int
-				poissonG( ValueType g )
-				{
 					unsigned int	em = 0;
 					ValueType		t = uniformNormalized();
 

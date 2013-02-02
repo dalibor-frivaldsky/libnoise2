@@ -168,6 +168,13 @@ namespace noise
 			return _mm_srli_epi32( v, bitCount );
 		}
 
+		static inline
+		bool
+		isAllZeros( const Vector4I& v )
+		{
+    		return _mm_movemask_epi8( _mm_cmpeq_epi8( v, _mm_setzero_si128() ) ) == 0xFFFF;
+		}
+
 
 		
 		static inline

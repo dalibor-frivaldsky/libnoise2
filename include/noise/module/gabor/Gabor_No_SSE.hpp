@@ -8,7 +8,7 @@
 
 #include <noise/module/Module.hpp>
 #include <noise/module/gabor/GaborBase.hpp>
-#include <noise/module/gabor/PRNG.hpp>
+#include <noise/module/gabor/Prng.hpp>
 
 
 
@@ -30,7 +30,7 @@ namespace noise
 			typedef Module< ValueType, Dimension >		ModuleType;
 			typedef gabor::GaborBase< ValueType >		BaseType;
 			typedef Gabor< ValueType, Dimension >		ThisType;
-			typedef gabor::PRNG< ValueType >			PRNGType;
+			typedef gabor::Prng< ValueType >			PrngType;
 			typedef Math< ValueType >					M;
 
 
@@ -89,42 +89,32 @@ namespace noise
 			ValueType
 			cell( int i, int j, ValueType x, ValueType y ) const
 			{
-				//unsigned int	s = (((unsigned(j) % period_) * period_) + (unsigned(i) % period_)) + random_offset_; // periodic noise
-				unsigned int	s = morton( i, j ) + this->GetSeed(); // nonperiodic noise
+				unsigned int	s = morton( i, j ) + this->GetSeed();
 
 				if( s == 0 )
 					s = 1;
 
-				PRNGType	prng;
-				prng.seed( s );
-
+				PrngType	prng( s );
+				
 				ValueType		numberOfImpulsesPerCell = this->GetImpulseDensity() * this->GetKernelRadius() * this->GetKernelRadius();
 				unsigned int	numberOfImpulses = prng.poisson( numberOfImpulsesPerCell );
 				ValueType		noise = ValueType( 0.0 );
-
-				//static int		gaborEvaluations = 0;
-				//static int		impulses = 0;
-
-				//impulses += numberOfImpulses;
 
 				for( unsigned int i = 0; i < numberOfImpulses; ++i)
 				{
 					ValueType	xi = prng.uniformNormalized();
 					ValueType	yi = prng.uniformNormalized();
 					ValueType	wi = prng.uniformRange( -1.0, +1.0 );
-					//ValueType	omega0i = prng.uniformRange( 0.0, 2.0 * M::Pi() );  // isotropic
+					ValueType	F0 = prng.uniformRange( this->GetFrequencyRangeStart(), this->GetFrequencyRangeEnd() );
+					ValueType	omega0 = prng.uniformRange( this->GetAngularRangeStart(), this->GetAngularRangeEnd() );
 					ValueType	xix = x - xi;
 					ValueType	yiy = y - yi;
 
 					if( ((xix * xix) + (yiy * yiy)) < ValueType( 1.0 ) )
 					{
-						//++gaborEvaluations;
-						noise += wi * gabor( this->GetK(), this->GetA(), this->GetF0(), this->GetOmega0(), xix * this->GetKernelRadius(), yiy * this->GetKernelRadius() ); // anisotropic
-						//noise += wi * gabor( K, a, F0, omega0i, xix * kernelRadius, yiy * kernelRadius); // isotropic
+						noise += wi * gabor( this->GetK(), this->GetA(), F0, omega0, xix * this->GetKernelRadius(), yiy * this->GetKernelRadius() ); // anisotropic
 					}
 				}
-
-				//std::cout << "gabor: " << gaborEvaluations << "/" << impulses << std::endl;
 
 				return noise;
 			}

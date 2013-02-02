@@ -48,9 +48,23 @@ namespace noise
 
 				static
 				float
+				frequencySpread()
+				{
+					return 0.0f;
+				}
+
+				static
+				float
 				omega0()
 				{
 					return Math< float >::Pi() / 4.0f;
+				}
+
+				static
+				float
+				angularSpread()
+				{
+					return 0.0f;
 				}
 
 				static
@@ -105,9 +119,23 @@ namespace noise
 
 				static
 				double
+				frequencySpread()
+				{
+					return 0.0;
+				}
+
+				static
+				double
 				omega0()
 				{
 					return Math< double >::Pi() / 4.0;
+				}
+
+				static
+				double
+				angularSpread()
+				{
+					return 0.0;
 				}
 
 				static
@@ -151,10 +179,17 @@ namespace noise
 				ValueType		K;
 				ValueType		a;
 				ValueType		F0;
+				ValueType		frequencySpread;
 				ValueType		omega0;
+				ValueType		angularSpread;
 				ValueType		numberOfImpulses;
 				unsigned int	period;
 				unsigned int	seed;
+
+				ValueType		frequencyRangeStart;
+				ValueType		frequencyRangeEnd;
+				ValueType		angularRangeStart;
+				ValueType		angularRangeEnd;
 
 				ValueType		kernelRadius;
 				ValueType		impulseDensity;
@@ -174,7 +209,9 @@ namespace noise
 				  kernelRadius( ValueType( 0.0 ) ),
 				  impulseDensity( ValueType( 0.0 ) )
 				{
-					recalculateProperties();
+					recalculateKernelProperties();
+					recalculateFrequencyProperties();
+					recalculateAngularProperties();
 				}
 
 				inline
@@ -185,10 +222,25 @@ namespace noise
 				}
 
 				inline
+				void
+				SetK( const ValueType& K )
+				{
+					this->K = K;
+				}
+
+				inline
 				ValueType
 				GetA() const
 				{
 					return a;
+				}
+
+				inline
+				void
+				SetA( const ValueType& a )
+				{
+					this->a = a;
+					recalculateKernelProperties();
 				}
 
 				inline
@@ -199,10 +251,56 @@ namespace noise
 				}
 
 				inline
+				void
+				SetF0( const ValueType& F0 )
+				{
+					this->F0 = F0;
+					recalculateFrequencyProperties();
+				}
+
+				inline
+				ValueType
+				GetFrequancySpread() const
+				{
+					return frequencySpread;
+				}
+
+				inline
+				void
+				SetFrequencySpread( const ValueType& frequencySpread )
+				{
+					this->frequencySpread = frequencySpread;
+					recalculateFrequencyProperties();
+				}
+
+				inline
 				ValueType
 				GetOmega0() const
 				{
 					return omega0;
+				}
+
+				inline
+				void
+				SetOmega0( const ValueType& omega0 )
+				{
+					this->omega0 = omega0;
+					recalculateAngularProperties();
+				}
+
+				inline
+				ValueType
+				GetAngularSpread() const
+				{
+					return angularSpread;
+				}
+
+				inline
+				void
+				SetAngularSpread( const ValueType& angularSpread )
+				{
+					this->angularSpread = angularSpread;
+					recalculateAngularProperties();
 				}
 
 				inline
@@ -213,6 +311,16 @@ namespace noise
 				}
 
 				inline
+				void
+				SetNumberOfImpulses( const ValueType& numberOfImpulses )
+				{
+					this->numberOfImpulses = numberOfImpulses;
+					recalculateKernelProperties();
+				}
+
+				// TODO implementd periodic noise
+				/*
+				inline
 				unsigned int
 				GetPeriod() const
 				{
@@ -220,10 +328,53 @@ namespace noise
 				}
 
 				inline
+				void
+				SetPeriod( const unsigned int& period )
+				{
+					this->period = period;
+				}
+				*/
+
+				inline
 				unsigned int
 				GetSeed() const
 				{
 					return seed;
+				}
+
+				inline
+				void
+				SetSeed( const unsigned int& seed )
+				{
+					this->seed = seed;
+				}
+
+				inline
+				ValueType
+				GetFrequencyRangeStart() const
+				{
+					return frequencyRangeStart;
+				}
+
+				inline
+				ValueType
+				GetFrequencyRangeEnd() const
+				{
+					return frequencyRangeEnd;
+				}
+
+				inline
+				ValueType
+				GetAngularRangeStart() const
+				{
+					return angularRangeStart;
+				}
+
+				inline
+				ValueType
+				GetAngularRangeEnd() const
+				{
+					return angularRangeEnd;
 				}
 
 				inline
@@ -245,10 +396,24 @@ namespace noise
 			private:
 
 				void
-				recalculateProperties()
+				recalculateKernelProperties()
 				{
 					kernelRadius = std::sqrt( -std::log( ValueType( 0.05 ) ) / Math< ValueType >::Pi() ) / a;
 					impulseDensity = numberOfImpulses / (Math< ValueType >::Pi() * kernelRadius * kernelRadius);
+				}
+
+				void
+				recalculateFrequencyProperties()
+				{
+					frequencyRangeStart = F0 - frequencySpread / ValueType( 2.0 );
+					frequencyRangeEnd = F0 + frequencySpread / ValueType( 2.0 );
+				}
+
+				void
+				recalculateAngularProperties()
+				{
+					angularRangeStart = omega0 - angularSpread / ValueType( 2.0 );
+					angularRangeEnd = omega0 + angularSpread / ValueType( 2.0 );
 				}
 
 			};

@@ -10,9 +10,9 @@
 #endif
 
 #if defined( __GNUC__ )
-#define VECTOR_ALIGN( v )			v __attribute__ ((aligned (16)))
+#define VECTOR4_ALIGN( v )			v __attribute__ ((aligned (16)))
 #elif defined( _MSC_VER )
-#define VECTOR_ALIGN( v )			__declspec( align( 16 ) ) v
+#define VECTOR4_ALIGN( v )			__declspec( align( 16 ) ) v
 #endif
 
 
