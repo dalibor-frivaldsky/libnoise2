@@ -165,7 +165,7 @@ namespace noise
 		Vector4I
 		shiftRightLogical( Vector4F& v, int bitCount )
 		{
-			return _mm_srli_epi32( v, bitCount );
+			return _mm_srli_epi32( _mm_castps_si128( v ), bitCount );
 		}
 
 		static inline
@@ -289,10 +289,10 @@ namespace noise
 			static const float		cephes_exp_p4 = 1.6666665459E-1f;
 			static const float		cephes_exp_p5 = 5.0000001201E-1f;
 
-			__m128	tmp = _mm_setzero_ps();
-			__m128	fx;
-			__m128	emm0;
-			__m128	one = _mm_set1_ps( 1.0f );
+			Vector4F	tmp = _mm_setzero_ps();
+			Vector4F	fx;
+			Vector4I	emm0i;
+			Vector4F	one = _mm_set1_ps( 1.0f );
 
 			x = _mm_min_ps( x, _mm_set1_ps( exp_hi ) );
 			x = _mm_max_ps( x, _mm_set1_ps( exp_lo ) );
@@ -302,22 +302,22 @@ namespace noise
 			fx = _mm_add_ps( fx, _mm_set1_ps( 0.5f ) );
 
 			/* how to perform a floorf with SSE: just below */
-			emm0 = _mm_cvttps_epi32( fx );
-			tmp  = _mm_cvtepi32_ps( emm0 );
+			emm0i = _mm_cvttps_epi32( fx );
+			tmp  = _mm_cvtepi32_ps( emm0i );
 
 			/* if greater, substract 1 */
-			__m128	mask = _mm_cmpgt_ps( tmp, fx );    
+			Vector4F	mask = _mm_cmpgt_ps( tmp, fx );    
 			mask = _mm_and_ps( mask, one );
 			fx = _mm_sub_ps( tmp, mask );
 
 			tmp = _mm_mul_ps( fx, _mm_set1_ps( cephes_exp_C1 ) );
-			__m128	z = _mm_mul_ps( fx, _mm_set1_ps( cephes_exp_C2 ) );
+			Vector4F	z = _mm_mul_ps( fx, _mm_set1_ps( cephes_exp_C2 ) );
 			x = _mm_sub_ps( x, tmp );
 			x = _mm_sub_ps( x, z );
 
 			z = _mm_mul_ps( x, x );
 
-			__m128	y = _mm_set1_ps( cephes_exp_p0 );
+			Vector4F	y = _mm_set1_ps( cephes_exp_p0 );
 			y = _mm_mul_ps( y, x );
 			y = _mm_add_ps( y, _mm_set1_ps( cephes_exp_p1 ) );
 			y = _mm_mul_ps( y, x );
@@ -333,10 +333,10 @@ namespace noise
 			y = _mm_add_ps( y, one );
 
 			/* build 2^n */
-			emm0 = _mm_cvttps_epi32( fx) ;
-			emm0 = _mm_add_epi32( emm0, _mm_set1_epi32( 0x7f ) );
-			emm0 = _mm_slli_epi32( emm0, 23 );
-			__m128	pow2n = _mm_castsi128_ps( emm0 );
+			emm0i = _mm_cvttps_epi32( fx) ;
+			emm0i = _mm_add_epi32( emm0i, _mm_set1_epi32( 0x7f ) );
+			emm0i = _mm_slli_epi32( emm0i, 23 );
+			Vector4F	pow2n = _mm_castsi128_ps( emm0i );
 			y = _mm_mul_ps( y, pow2n );
 
 			return y;

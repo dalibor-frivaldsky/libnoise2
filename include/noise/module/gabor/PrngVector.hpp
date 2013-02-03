@@ -108,7 +108,7 @@ namespace noise
 					typename M::Vector4F	tV = uniformNormalized();
 
 					typename M::Vector4I	seedBackupV = x;
-					typename M::Vector4I	tgMaskV = _mm_cmpgt_ps( tV, gV );
+					typename M::Vector4I	tgMaskV = _mm_castps_si128( _mm_cmpgt_ps( tV, gV ) );
 
 					while( !M::isAllZeros( tgMaskV ) )
 					{
@@ -124,7 +124,7 @@ namespace noise
 						x = M::add( seedNextPartV, seedBackupPartV );
 
 						seedBackupV = x;
-						tgMaskV = _mm_cmpgt_ps( tV, gV );
+						tgMaskV = _mm_castps_si128( _mm_cmpgt_ps( tV, gV ) );
 					}
 
 					return emV;

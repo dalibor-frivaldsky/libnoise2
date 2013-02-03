@@ -18,7 +18,7 @@ namespace noise
 		ValueType
 		floor( ValueType x )
 		{
-			return ( x > ValueType( 0.0 ) ? (int) x: (int) x - 1 );
+			return ( x > ValueType( 0.0 ) ? ValueType( int( x ) ): ValueType( int( x - 1 ) ) );
 		}
 	
 	};

@@ -28,13 +28,13 @@ namespace noise
 	namespace module
 	{
 
-		template< >
-		class Gabor< float, 2 >: public Module< float, 2 >, public gabor::GaborBase< float >
+		template< typename ValueT >
+		class Gabor< ValueT, 2 >: public Module< ValueT, 2 >, public gabor::GaborBase< ValueT >
 		{
 
 		public:
 
-			typedef float								ValueType;
+			typedef ValueT								ValueType;
 			static const unsigned						Dimension = 2;
 			typedef Module< ValueType, Dimension >		ModuleType;
 			typedef gabor::GaborBase< ValueType >		BaseType;
@@ -191,12 +191,21 @@ namespace noise
 				typename M::Vector4I	oneIV = M::vectorizeOne( (typename M::ScalarI) 1 );
 				typename M::Vector4F	oneFV = M::vectorizeOne( ValueType( 1.0 ) );
 				
+#if defined( _MSC_VER )
+				ValueType*		xInputA = (ValueType*) _alloca( 4 * maxNumberOfImpulses * sizeof( ValueType ) );
+				ValueType*		yInputA = (ValueType*) _alloca( 4 * maxNumberOfImpulses * sizeof( ValueType ) );
+				ValueType*		wiInputA = (ValueType*) _alloca( 4 * maxNumberOfImpulses * sizeof( ValueType ) );
+				ValueType*		F0InputA = (ValueType*) _alloca( 4 * maxNumberOfImpulses * sizeof( ValueType ) );
+				ValueType*		omega0InputA = (ValueType*) _alloca( 4 * maxNumberOfImpulses * sizeof( ValueType ) );
+				unsigned int*	calcMaskA = (unsigned int*) _alloca( 4 * maxNumberOfImpulses * sizeof( unsigned int ) );
+#else
 				VECTOR4_ALIGN( ValueType		xInputA[ 4 * maxNumberOfImpulses ] );
 				VECTOR4_ALIGN( ValueType		yInputA[ 4 * maxNumberOfImpulses ] );
 				VECTOR4_ALIGN( ValueType		wiInputA[ 4 * maxNumberOfImpulses ] );
 				VECTOR4_ALIGN( ValueType		F0InputA[ 4 * maxNumberOfImpulses ] );
 				VECTOR4_ALIGN( ValueType		omega0InputA[ 4 * maxNumberOfImpulses ] );
 				VECTOR4_ALIGN( unsigned int		calcMaskA[ 4 * maxNumberOfImpulses ] );
+#endif
 
 				for( unsigned int i = 0; i < maxNumberOfImpulses; ++i )
 				{
@@ -212,7 +221,7 @@ namespace noise
 					typename M::Vector4F	radiusXV = M::multiply( xixV, xixV );
 					typename M::Vector4F	radiusYV = M::multiply( yiyV, yiyV );
 					typename M::Vector4F	radiusV = M::add( radiusXV, radiusYV );
-					typename M::Vector4I	radiusMaskV = _mm_cmplt_ps( radiusV, oneFV );
+					typename M::Vector4I	radiusMaskV = _mm_castps_si128( _mm_cmplt_ps( radiusV, oneFV ) );
 					typename M::Vector4I	calcMaskV = _mm_and_si128( radiusMaskV, impulseMaskV );
 
 					M::storeToMemory( xInputA + (i * 4 ), xixV );
@@ -231,7 +240,7 @@ namespace noise
 				VECTOR4_ALIGN( ValueType	wiInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
 				VECTOR4_ALIGN( ValueType	F0InputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
 				VECTOR4_ALIGN( ValueType	omega0InputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				for( int g = 0; g < maxNumberOfImpulses * 4; ++g )
+				for( unsigned int g = 0; g < maxNumberOfImpulses * 4; ++g )
 				{
 					if( calcMaskA[ g ] == 0xffffffff )
 					{
@@ -297,8 +306,8 @@ namespace noise
 			}
 
 			inline
-			M::Vector4I
-			mortonVectorized( const M::Vector4I& xV, const M::Vector4I& yV ) const
+			typename M::Vector4I
+			mortonVectorized( const typename M::Vector4I& xV, const typename M::Vector4I& yV ) const
 			{
 				M::Vector4I		zV = _mm_setzero_si128();
 				M::Vector4I		oneV = M::vectorizeOne( (M::ScalarI) 1 );
@@ -328,8 +337,10 @@ namespace noise
 			}
 
 			inline
-			M::Vector4F
-			gaborVectorized( M::Vector4F& kV, M::Vector4F& aV, M::Vector4F& f0V, M::Vector4F& omega0V, M::Vector4F& xV, M::Vector4F& yV ) const
+			typename M::Vector4F
+			gaborVectorized( const typename M::Vector4F& kV, const typename M::Vector4F& aV,
+							 const typename M::Vector4F& f0V, const typename M::Vector4F& omega0V,
+							 const typename M::Vector4F& xV, const typename M::Vector4F& yV ) const
 			{
 				M::Vector4F		piV = M::vectorizeOne( -M::Pi() );
 				M::Vector4F		aa = M::multiply( aV, aV );
