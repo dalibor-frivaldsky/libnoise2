@@ -22,15 +22,16 @@ namespace noise
 	{
 		public:
 		
-		typedef float		ScalarF;
-		typedef __m128		Vector2F;
-		typedef __m128		Vector3F;
-		typedef __m128		Vector4F;
+		typedef float			ScalarF;
+		typedef __m128			Vector2F;
+		typedef __m128			Vector3F;
+		typedef __m128			Vector4F;
 		
-		typedef int			ScalarI;
-		typedef __m128i		Vector2I;
-		typedef __m128i		Vector3I;
-		typedef __m128i		Vector4I;
+		typedef int				ScalarI;
+		typedef unsigned int	ScalarUI;
+		typedef __m128i			Vector2I;
+		typedef __m128i			Vector3I;
+		typedef __m128i			Vector4I;
 		
 		
 		
@@ -116,9 +117,16 @@ namespace noise
 
 		static inline
 		Vector4I
-		vectorizeOne( ScalarI i )
+		vectorizeOne( const ScalarI& i )
 		{
 			return _mm_set1_epi32( i );
+		}
+
+		static inline
+		Vector4I
+		vectorizeOne( const ScalarUI& ui )
+		{
+			return _mm_set1_epi32( ui );
 		}
 		
 		static inline

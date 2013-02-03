@@ -76,8 +76,8 @@ namespace noise
 				static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 				static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
 
-				M::Vector4I		iV = M::vectorizeOne( (M::ScalarI) i );
-				M::Vector4I		jV = M::vectorizeOne( (M::ScalarI) j );
+				typename M::Vector4I		iV = M::vectorizeOne( i );
+				typename M::Vector4I		jV = M::vectorizeOne( j );
 
 				for( int m = 0; m < 2; ++m )
 				{
@@ -309,28 +309,28 @@ namespace noise
 			typename M::Vector4I
 			mortonVectorized( const typename M::Vector4I& xV, const typename M::Vector4I& yV ) const
 			{
-				M::Vector4I		zV = _mm_setzero_si128();
-				M::Vector4I		oneV = M::vectorizeOne( (M::ScalarI) 1 );
-				M::Vector4I		seedV = M::vectorizeOne( (M::ScalarI) this->GetSeed() );
+				typename M::Vector4I		zV = _mm_setzero_si128();
+				typename M::Vector4I		oneV = M::vectorizeOne( 1 );
+				typename M::Vector4I		seedV = M::vectorizeOne( this->GetSeed() );
 
 				for( unsigned int i = 0; i < (sizeof( unsigned int ) * CHAR_BIT); ++i )
 				{
-					M::Vector4I		left = _mm_slli_epi32( oneV, i );
+					typename M::Vector4I		left = _mm_slli_epi32( oneV, i );
 					left = _mm_and_si128( xV, left );
 					left = _mm_slli_epi32( left, i );
 
-					M::Vector4I		right = _mm_slli_epi32( oneV, i );
+					typename M::Vector4I		right = _mm_slli_epi32( oneV, i );
 					right = _mm_and_si128( right, yV );
 					right = _mm_slli_epi32( right, i + 1 );
 
-					M::Vector4I		tmp = _mm_or_si128( left, right );
+					typename M::Vector4I		tmp = _mm_or_si128( left, right );
 					zV = _mm_or_si128( zV, tmp );
 				}
 
 				zV = M::add( zV, seedV );
 
-				M::Vector4I		isZero = _mm_cmpeq_epi32( zV, _mm_setzero_si128() );
-				M::Vector4I		toOne = _mm_srli_epi32( isZero, 31 );
+				typename M::Vector4I		isZero = _mm_cmpeq_epi32( zV, _mm_setzero_si128() );
+				typename M::Vector4I		toOne = _mm_srli_epi32( isZero, 31 );
 				zV = M::add( zV, toOne );
 
 				return zV;
@@ -342,25 +342,25 @@ namespace noise
 							 const typename M::Vector4F& f0V, const typename M::Vector4F& omega0V,
 							 const typename M::Vector4F& xV, const typename M::Vector4F& yV ) const
 			{
-				M::Vector4F		piV = M::vectorizeOne( -M::Pi() );
-				M::Vector4F		aa = M::multiply( aV, aV );
-				M::Vector4F		xx = M::multiply( xV, xV );
-				M::Vector4F		yy = M::multiply( yV, yV );
-				M::Vector4F		xxyy = M::add( xx, yy );
+				typename M::Vector4F		piV = M::vectorizeOne( -M::Pi() );
+				typename M::Vector4F		aa = M::multiply( aV, aV );
+				typename M::Vector4F		xx = M::multiply( xV, xV );
+				typename M::Vector4F		yy = M::multiply( yV, yV );
+				typename M::Vector4F		xxyy = M::add( xx, yy );
 
-				M::Vector4F		gaussianEnvelop =  M::multiply( piV, aa );
+				typename M::Vector4F		gaussianEnvelop =  M::multiply( piV, aa );
 				gaussianEnvelop = M::multiply( gaussianEnvelop, xxyy );
 				gaussianEnvelop = M::exp( gaussianEnvelop );
 				gaussianEnvelop = M::multiply( gaussianEnvelop, kV );
 
-				M::Vector4F		sinOmega;
-				M::Vector4F		cosOmega;
+				typename M::Vector4F		sinOmega;
+				typename M::Vector4F		cosOmega;
 				M::sinCos( omega0V, sinOmega, cosOmega );
-				M::Vector4F		xCosOmega = M::multiply( xV, cosOmega );
-				M::Vector4F		ySinOmega = M::multiply( yV, sinOmega );
-				M::Vector4F		xCosYSin = M::add( xCosOmega, ySinOmega );
+				typename M::Vector4F		xCosOmega = M::multiply( xV, cosOmega );
+				typename M::Vector4F		ySinOmega = M::multiply( yV, sinOmega );
+				typename M::Vector4F		xCosYSin = M::add( xCosOmega, ySinOmega );
 
-				M::Vector4F		sinusoidalCarrier = M::multiply( M::vectorizeOne( 2.0f ), piV );
+				typename M::Vector4F		sinusoidalCarrier = M::multiply( M::vectorizeOne( 2.0f ), piV );
 				sinusoidalCarrier = M::multiply( sinusoidalCarrier, f0V );
 				sinusoidalCarrier = M::multiply( sinusoidalCarrier, xCosYSin );
 				sinusoidalCarrier = M::cos( sinusoidalCarrier );
