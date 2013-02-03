@@ -6,18 +6,11 @@
 #include <iostream>
 
 
-#include <noise/Math.hpp>
+#include <noise/math/Math.hpp>
 #include <noise/module/Module.hpp>
 #include <noise/module/gabor/GaborBase.hpp>
 #include <noise/module/gabor/Prng.hpp>
 #include <noise/module/gabor/PrngVector.hpp>
-
-
-
-
-
-
-
 
 
 
@@ -39,9 +32,13 @@ namespace noise
 			typedef Module< ValueType, Dimension >		ModuleType;
 			typedef gabor::GaborBase< ValueType >		BaseType;
 			typedef Gabor< ValueType, Dimension >		ThisType;
+
+
+
+		private:
 			typedef gabor::Prng< ValueType >			PrngType;
 			typedef gabor::PrngVector< ValueType >		PrngVectorType;
-			typedef Math< ValueType >					M;
+			typedef math::Math< ValueType >				M;
 
 
 

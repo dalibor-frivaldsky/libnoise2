@@ -5,7 +5,7 @@
 #include <cmath>
 
 
-#include <noise/Math.hpp>
+#include <noise/math/Math.hpp>
 
 
 
@@ -23,13 +23,14 @@ namespace noise
 			class PrngVector
 			{
 
-			public:
+			private:
 
-				typedef Math< ValueType >		M;
+				typedef math::Math< ValueType >		M;
 
 
 
 			private:
+
 
 				typename M::Vector4I		x;
 
