@@ -205,18 +205,14 @@ namespace noise
 						 typename M::Vector4F& omega0VNext,
 						 typename M::Vector4I& calcMaskVNext )
 				{
-					/*std::cout << "calcMaskVPrev\t"; debug::printVectorBool( calcMaskVPrev );
-					std::cout << "calcMaskVNext\t"; debug::printVectorBool( calcMaskVNext );*/
+					if( M::isAllZeros( calcMaskVNext ) == true )
+					{
+						return false;
+					}
 
 					typename M::Vector4I	compactMaskV = _mm_xor_si128( calcMaskVPrev, _mm_or_si128( calcMaskVPrev, calcMaskVNext ) );
 					typename M::Vector4I	keepMaskV = _mm_and_si128( calcMaskVPrev, calcMaskVNext );
 					bool	calculate = !M::isAllZeros( keepMaskV );
-
-					/*std::cout << "compactMaskV\t"; debug::printVectorBool( compactMaskV );
-					std::cout << "keepMaskV\t"; debug::printVectorBool( keepMaskV );
-
-					std::cout << "xInputVNext\t"; debug::printVector( xInputVNext );
-					std::cout << "xInputVPrev\t"; debug::printVector( xInputVPrev );*/
 
 					xInputVNext = compactOne( compactMaskV, keepMaskV, xInputVPrev, xInputVNext, calculate );
 					yInputVNext = compactOne( compactMaskV, keepMaskV, yInputVPrev, yInputVNext, calculate );
@@ -224,48 +220,17 @@ namespace noise
 					F0VNext = compactOne( compactMaskV, keepMaskV, F0VPrev, F0VNext, calculate );
 					omega0VNext = compactOne( compactMaskV, keepMaskV, omega0VPrev, omega0VNext, calculate );
 
-					/*std::cout << "xInputVNext\t"; debug::printVector( xInputVNext );
-					std::cout << "xInputVPrev\t"; debug::printVector( xInputVPrev );*/
-					//debug::printVectorBool( calcMaskVPrev );
-					//debug::printVectorBool( calcMaskVNext );
-
 					if( calculate == false )
 					{
 						calcMaskVPrev = _mm_or_si128( calcMaskVPrev, calcMaskVNext );
-						/*xInputVPrev = xInputVNext;
-						yInputVPrev = yInputVNext;
-						wiVPrev = wiVNext;
-						F0VPrev = F0VNext;
-						omega0VPrev = omega0VNext;*/
-
-						/*std::cout << "nCalcMaskVPrev\t"; debug::printVectorBool( calcMaskVPrev );
-						std::cout << "not calculating" << std::endl;*/
 					}
 					else
 					{
 						calcMaskVNext = _mm_or_si128( calcMaskVPrev, calcMaskVNext );
 						calcMaskVPrev = keepMaskV;
-
-						/*xInputVNext = xInputVPrev;
-						yInputVNext = yInputVPrev;
-						wiVNext = wiVPrev;
-						F0VNext = F0VPrev;
-						omega0VNext = omega0VPrev;*/
-
-						/*std::cout << "nCalcMaskVPrev\t"; debug::printVectorBool( calcMaskVPrev );
-						std::cout << "nCalcMaskVNext\t"; debug::printVectorBool( calcMaskVNext );
-						std::cout << "calculating" << std::endl;*/
 					}
 
-					//std::cout << std::endl;
 					return calculate;
-				}
-
-				inline
-				bool
-				remains()
-				{
-					return M::isAllZeros( calcMaskVPrev ) == false;
 				}
 
 
@@ -280,21 +245,21 @@ namespace noise
 					static VECTOR4_ALIGN( typename M::ScalarUI	negMaskA[ 4 ] ) = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
 					typename M::Vector4I	negMaskV = M::loadFromMemory( negMaskA );
 
-					typename M::Vector4I	newVPrev = _mm_and_si128( _mm_castps_si128( vNext ), compactMaskV );
+					typename M::Vector4I	compactV = _mm_and_si128( _mm_castps_si128( vNext ), compactMaskV );
 					typename M::Vector4I	negCompactMaskV = _mm_xor_si128( compactMaskV, negMaskV );
-					newVPrev = M::add( newVPrev, _mm_and_si128( vPrev, negCompactMaskV ) );
+					compactV = M::add( compactV, _mm_and_si128( vPrev, negCompactMaskV ) );
 
-					typename M::Vector4I	newVNext = _mm_and_si128( _mm_castps_si128( vNext ), keepMaskV );
+					typename M::Vector4I	keepV = _mm_and_si128( _mm_castps_si128( vNext ), keepMaskV );
 
 					if( calculate == false )
 					{
-						vPrev = _mm_castsi128_ps( newVPrev );
-						return _mm_castsi128_ps( newVNext );
+						vPrev = _mm_castsi128_ps( compactV );
+						return _mm_castsi128_ps( keepV );
 					}
 					else
 					{
-						vPrev = _mm_castsi128_ps( newVNext );
-						return _mm_castsi128_ps( newVPrev );
+						vPrev = _mm_castsi128_ps( keepV );
+						return _mm_castsi128_ps( compactV );
 					}
 				}
 
@@ -304,8 +269,6 @@ namespace noise
 			ValueType
 			cellVectorizedNoArrays( const typename M::Vector4I sV, const typename M::Vector4F xV, const typename M::Vector4F yV ) const
 			{
-				//std::cout << "============================" << std::endl;
-
 				static int	total = 0;
 				static int	calced = 0;
 				Compacter	compacter;
@@ -342,21 +305,12 @@ namespace noise
 					typename M::Vector4I	radiusMaskV = _mm_castps_si128( _mm_cmplt_ps( radiusV, oneFV ) );
 					typename M::Vector4I	calcMaskV = _mm_and_si128( radiusMaskV, impulseMaskV );
 
-					//++total;
-					//std::cout << "impV\t"; debug::printVector( numberOfImpulsesV );
-					
-
-					if( M::isAllZeros( calcMaskV ) == false )
+					if( compacter.compact( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV ) == true )
 					{
-						if( compacter.compact( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV ) == true )
-						{
-							//++calced;
-							noise += cellPart( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV );	
-						}
+						noise += cellPart( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV );	
 					}
-					if( (i == maxNumberOfImpulses - 1) && (compacter.remains() == true) )
+					if( i == maxNumberOfImpulses - 1 )
 					{
-						//std::cout << "remaining" << std::endl;
 						noise += cellPart( compacter.xInputVPrev,
 										   compacter.yInputVPrev,
 										   compacter.wiVPrev,
@@ -368,10 +322,6 @@ namespace noise
 					numberOfImpulsesV = M::subtract( numberOfImpulsesV, _mm_and_si128( impulseMaskV, oneIV ) );
 				}
 
-				//std::cout << total << "/" << calced << std::endl;
-				//std::cout << std::endl << std::endl;
-
-				//std::cout << noise << std::endl;
 				return noise;
 			}
 
@@ -398,26 +348,14 @@ namespace noise
 				M::storeToMemory( gaborA, gaborV );
 				M::storeToMemory( calcMaskA, calcMaskV );
 
-				//std::cout << "calc\t"; debug::printVectorBool( calcMaskV );
-				//std::cout << "xV\t"; debug::printVector( xInputV );
-				//std::cout << std::endl << std::endl;
-
-				//std::cout << "mask: ";
 				for( int j = 0; j < 4; ++j )
 				{
 					if( calcMaskA[ j ] == 0xffffffff )
 					{
-						//std::cout << "1 ";
-						//std::cout << gaborA[ j ] << std::endl;
 						noise += gaborA[ j ];
 					}
-					else
-					{
-						//std::cout << "0 ";
-					}
 				}
-				//std::cout << std::endl;
-
+				
 				return noise;
 			}
 
@@ -480,10 +418,6 @@ namespace noise
 					M::storeToMemory( omega0InputA + (i * 4 ), omega0V );
 					M::storeToMemory( (typename M::ScalarI*) calcMaskA + (i * 4 ), calcMaskV );
 
-					//std::cout << "impV\t"; debug::printVector( numberOfImpulsesV );
-					//std::cout << "calc\t"; debug::printVectorBool( calcMaskV );
-					//std::cout << "xV\t"; debug::printVector( _mm_castsi128_ps( _mm_and_si128( xixV, calcMaskV ) ) );
-
 					numberOfImpulsesV = M::subtract( numberOfImpulsesV, _mm_and_si128( impulseMaskV, oneIV ) );
 				}
 
@@ -516,8 +450,6 @@ namespace noise
 						typename M::Vector4F		omega0V = M::loadFromMemory( omega0InputPartA );
 						typename M::Vector4F		wiV = M::loadFromMemory( wiInputPartA );
 
-						//std::cout << "array X\t"; debug::printVector( xInputV );
-
 						xInputV = M::multiply( xInputV, kernelRadiusV );
 						yInputV = M::multiply( yInputV, kernelRadiusV );
 
@@ -529,7 +461,6 @@ namespace noise
 
 						for( int j = 0; j < toCalculate; ++j )
 						{
-							//std::cout << gaborResult[ j ] << std::endl;
 							noise += gaborResult[ j ];
 						}
 
@@ -537,7 +468,6 @@ namespace noise
 					}
 				}
 
-				//std::cout << noise << std::endl;
 				return noise;
 			}
 
