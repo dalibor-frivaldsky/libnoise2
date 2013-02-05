@@ -74,8 +74,10 @@ namespace noise
 
 				//static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 				//static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
-				static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, 1, 1, -1, 0, 0, 1, 0 };
-				static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 1, -1, 1, 0, -1, 1, 0, 0 };
+				//static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, 1, 1, -1, 0, 0, 1, 0 };
+				//static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 1, -1, 1, 0, -1, 1, 0, 0 };
+				static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+				static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, 0, 1, -1 };
 
 				typename M::Vector4I		iV = M::vectorizeOne( i );
 				typename M::Vector4I		jV = M::vectorizeOne( j );
@@ -325,6 +327,7 @@ namespace noise
 
 					if( compacter.compact( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV ) == true )
 					{
+						//debug::printVectorBool( calcMaskV );
 						noise += cellPart( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV );	
 					}
 					if( i == maxNumberOfImpulses - 1 )
