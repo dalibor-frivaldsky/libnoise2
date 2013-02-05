@@ -179,6 +179,27 @@ namespace noise
 				return _mm_srli_epi32( v, bitCount );
 			}
 
+			static inline
+			Vector4I
+			shiftRightLoop( const Vector4I& v, int count )
+			{
+				Vector4I	shiftedV = v;
+
+				for( int i = 0; i < count; ++i )
+				{
+					shiftedV = _mm_shuffle_epi32( shiftedV, _MM_SHUFFLE( 0, 3, 2, 1 ) );
+				}
+
+				return shiftedV;
+			}
+
+			static inline
+			Vector4I
+			shiftRightLoop( const Vector4F& v, int count )
+			{
+				return _mm_castsi128_ps( shiftRightLoop( _mm_castps_si128( v ), count ) );
+			}
+
 
 			// Exponential
 			static inline

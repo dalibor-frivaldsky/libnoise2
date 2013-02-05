@@ -210,9 +210,27 @@ namespace noise
 						return false;
 					}
 
-					typename M::Vector4I	compactMaskV = _mm_xor_si128( calcMaskVPrev, _mm_or_si128( calcMaskVPrev, calcMaskVNext ) );
-					typename M::Vector4I	keepMaskV = _mm_and_si128( calcMaskVPrev, calcMaskVNext );
-					bool	calculate = !M::isAllZeros( keepMaskV );
+					typename M::Vector4I	compactMaskV;// = _mm_xor_si128( calcMaskVPrev, _mm_or_si128( calcMaskVPrev, calcMaskVNext ) );
+					typename M::Vector4I	keepMaskV;// = _mm_and_si128( calcMaskVPrev, calcMaskVNext );
+					bool	calculate;// = !M::isAllZeros( keepMaskV );
+
+					//if( calculate == true )
+					{
+						//debug::printVector( xInputVPrev );
+
+						xInputVPrev = M::shiftRightLoop( xInputVPrev, 1 );
+						yInputVPrev = M::shiftRightLoop( yInputVPrev, 1 );
+						wiVPrev = M::shiftRightLoop( wiVPrev, 1 );
+						F0VPrev = M::shiftRightLoop( F0VPrev, 1 );
+						omega0VPrev = M::shiftRightLoop( omega0VPrev, 1 );
+						calcMaskVPrev = M::shiftRightLoop( calcMaskVPrev, 1 );
+
+						//debug::printVector( xInputVPrev );
+
+						compactMaskV = _mm_xor_si128( calcMaskVPrev, _mm_or_si128( calcMaskVPrev, calcMaskVNext ) );
+						keepMaskV = _mm_and_si128( calcMaskVPrev, calcMaskVNext );
+						calculate = !M::isAllZeros( keepMaskV );
+					}
 
 					xInputVNext = compactOne( compactMaskV, keepMaskV, xInputVPrev, xInputVNext, calculate );
 					yInputVNext = compactOne( compactMaskV, keepMaskV, yInputVPrev, yInputVNext, calculate );
