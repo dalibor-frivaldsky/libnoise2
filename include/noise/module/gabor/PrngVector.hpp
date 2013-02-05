@@ -111,7 +111,7 @@ namespace noise
 					typename M::Vector4I	seedBackupV = x;
 					typename M::Vector4I	tgMaskV = _mm_castps_si128( _mm_cmpgt_ps( tV, gV ) );
 
-					while( !M::isAllZeros( tgMaskV ) )
+					while( M::isAllZeros( tgMaskV ) == false )
 					{
 						typename M::Vector4I	incrementV = _mm_and_si128( oneIV, tgMaskV );
 						emV = M::add( emV, incrementV );
