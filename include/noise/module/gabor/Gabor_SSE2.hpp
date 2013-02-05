@@ -354,7 +354,7 @@ namespace noise
 							noise += cellPart( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV );	
 						}
 					}
-					/*if( (i == maxNumberOfImpulses - 1) && (compacter.remains() == true) )
+					if( (i == maxNumberOfImpulses - 1) && (compacter.remains() == true) )
 					{
 						//std::cout << "remaining" << std::endl;
 						noise += cellPart( compacter.xInputVPrev,
@@ -363,7 +363,7 @@ namespace noise
 										   compacter.F0VPrev,
 										   compacter.omega0VPrev,
 										   compacter.calcMaskVPrev );
-					}*/
+					}
 
 					numberOfImpulsesV = M::subtract( numberOfImpulsesV, _mm_and_si128( impulseMaskV, oneIV ) );
 				}
