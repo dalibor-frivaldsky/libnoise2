@@ -212,28 +212,17 @@ namespace noise
 						return false;
 					}
 
-					typename M::Vector4I	compactMaskV;// = _mm_xor_si128( calcMaskVPrev, _mm_or_si128( calcMaskVPrev, calcMaskVNext ) );
-					typename M::Vector4I	keepMaskV;// = _mm_and_si128( calcMaskVPrev, calcMaskVNext );
-					bool	calculate;// = !M::isAllZeros( keepMaskV );
+					xInputVPrev = M::shiftRightLoop( xInputVPrev, 1 );
+					yInputVPrev = M::shiftRightLoop( yInputVPrev, 1 );
+					wiVPrev = M::shiftRightLoop( wiVPrev, 1 );
+					F0VPrev = M::shiftRightLoop( F0VPrev, 1 );
+					omega0VPrev = M::shiftRightLoop( omega0VPrev, 1 );
+					calcMaskVPrev = M::shiftRightLoop( calcMaskVPrev, 1 );
 
-					//if( calculate == true )
-					{
-						//debug::printVector( xInputVPrev );
-
-						xInputVPrev = M::shiftRightLoop( xInputVPrev, 1 );
-						yInputVPrev = M::shiftRightLoop( yInputVPrev, 1 );
-						wiVPrev = M::shiftRightLoop( wiVPrev, 1 );
-						F0VPrev = M::shiftRightLoop( F0VPrev, 1 );
-						omega0VPrev = M::shiftRightLoop( omega0VPrev, 1 );
-						calcMaskVPrev = M::shiftRightLoop( calcMaskVPrev, 1 );
-
-						//debug::printVector( xInputVPrev );
-
-						compactMaskV = _mm_xor_si128( calcMaskVPrev, _mm_or_si128( calcMaskVPrev, calcMaskVNext ) );
-						keepMaskV = _mm_and_si128( calcMaskVPrev, calcMaskVNext );
-						calculate = !M::isAllZeros( keepMaskV );
-					}
-
+					typename M::Vector4I	compactMaskV = _mm_xor_si128( calcMaskVPrev, _mm_or_si128( calcMaskVPrev, calcMaskVNext ) );
+					typename M::Vector4I	keepMaskV = _mm_and_si128( calcMaskVPrev, calcMaskVNext );
+					bool	calculate = !M::isAllZeros( keepMaskV );
+					
 					xInputVNext = compactOne( compactMaskV, keepMaskV, xInputVPrev, xInputVNext, calculate );
 					yInputVNext = compactOne( compactMaskV, keepMaskV, yInputVPrev, yInputVNext, calculate );
 					wiVNext = compactOne( compactMaskV, keepMaskV, wiVPrev, wiVNext, calculate );
@@ -262,24 +251,18 @@ namespace noise
 				compactOne( const typename M::Vector4I& compactMaskV, const typename M::Vector4I& keepMaskV,
 							typename M::Vector4F& vPrev, const typename M::Vector4F& vNext, bool calculate )
 				{
-					static VECTOR4_ALIGN( typename M::ScalarUI	negMaskA[ 4 ] ) = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
-					typename M::Vector4I	negMaskV = M::loadFromMemory( negMaskA );
-
-					typename M::Vector4I	compactV = _mm_and_si128( _mm_castps_si128( vNext ), compactMaskV );
-					typename M::Vector4I	negCompactMaskV = _mm_xor_si128( compactMaskV, negMaskV );
-					compactV = M::add( compactV, _mm_and_si128( vPrev, negCompactMaskV ) );
-
-					typename M::Vector4I	keepV = _mm_and_si128( _mm_castps_si128( vNext ), keepMaskV );
+					typename M::Vector4F	compactV = M::blend( vPrev, vNext, compactMaskV );
+					typename M::Vector4F	keepV = _mm_castsi128_ps( _mm_and_si128( _mm_castps_si128( vNext ), keepMaskV ) );
 
 					if( calculate == false )
 					{
-						vPrev = _mm_castsi128_ps( compactV );
-						return _mm_castsi128_ps( keepV );
+						vPrev = compactV;
+						return keepV;
 					}
 					else
 					{
-						vPrev = _mm_castsi128_ps( keepV );
-						return _mm_castsi128_ps( compactV );
+						vPrev = keepV;
+						return compactV;
 					}
 				}
 
@@ -289,11 +272,8 @@ namespace noise
 			ValueType
 			cellVectorizedNoArrays( const typename M::Vector4I sV, const typename M::Vector4F xV, const typename M::Vector4F yV ) const
 			{
-				static int	total = 0;
-				static int	calced = 0;
-				Compacter	compacter;
-
 				ValueType	noise = ValueType( 0.0 );
+				Compacter	compacter;
 
 				PrngVectorType			prngVector( sV );
 				typename M::Vector4F	impulseDensityV = M::vectorizeOne( this->GetImpulseDensity() );
@@ -327,7 +307,6 @@ namespace noise
 
 					if( compacter.compact( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV ) == true )
 					{
-						//debug::printVectorBool( calcMaskV );
 						noise += cellPart( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV );	
 					}
 					if( i == maxNumberOfImpulses - 1 )

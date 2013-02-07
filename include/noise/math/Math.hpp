@@ -25,6 +25,18 @@
 #define LIBNOISE2_SUPPORT_MATH_IMPL		Math_SSE3
 #endif
 
+#if defined( LIBNOISE2_AT_LEAST_SSSE3 )
+#include <noise/math/Math_SSSE3.hpp>
+#undef LIBNOISE2_SUPPORT_MATH_IMPL
+#define LIBNOISE2_SUPPORT_MATH_IMPL		Math_SSSE3
+#endif
+
+#if defined( LIBNOISE2_AT_LEAST_SSE4_1 )
+#include <noise/math/Math_SSE4_1.hpp>
+#undef LIBNOISE2_SUPPORT_MATH_IMPL
+#define LIBNOISE2_SUPPORT_MATH_IMPL		Math_SSE4_1
+#endif
+
 namespace noise
 {
 	

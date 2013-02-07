@@ -100,10 +100,8 @@ namespace noise
 				{
 					static VECTOR4_ALIGN( ValueType		minusOneFA[ 4 ] ) = { -1.0, -1.0, -1.0, -1.0 };
 					static VECTOR4_ALIGN( unsigned int	oneIA[ 4 ] ) = { 1, 1, 1, 1 };
-					static VECTOR4_ALIGN( unsigned int	negMaskA[ 4 ] ) = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
-
+					
 					typename M::Vector4I	oneIV = M::loadFromMemory( (typename M::ScalarI*) oneIA );
-					typename M::Vector4I	negMaskV = M::loadFromMemory( (typename M::ScalarI*) negMaskA );
 					typename M::Vector4F	gV = M::exp( M::multiply( meanV, M::loadFromMemory( minusOneFA ) ) );
 					typename M::Vector4I	emV = _mm_setzero_si128();
 					typename M::Vector4F	tV = uniformNormalized();
@@ -119,10 +117,7 @@ namespace noise
 						typename M::Vector4F	tMulV = uniformNormalized();
 						tV = M::multiply( tV, tMulV );
 
-						typename M::Vector4I	seedNextPartV = _mm_and_si128( x, tgMaskV );
-						typename M::Vector4I	negTgMaskV = _mm_xor_si128( tgMaskV, negMaskV );
-						typename M::Vector4I	seedBackupPartV = _mm_and_si128( seedBackupV, negTgMaskV );
-						x = M::add( seedNextPartV, seedBackupPartV );
+						x = M::blend( seedBackupV, x, tgMaskV );
 
 						seedBackupV = x;
 						tgMaskV = _mm_castps_si128( _mm_cmpgt_ps( tV, gV ) );

@@ -200,6 +200,20 @@ namespace noise
 				return _mm_castsi128_ps( shiftRightLoop( _mm_castps_si128( v ), count ) );
 			}
 
+			// Misc operations
+			static inline
+			Vector4F
+			blend( const Vector4F& a, const Vector4F& b, const Vector4I blendMask )
+			{
+				static VECTOR4_ALIGN( ScalarUI	negMaskA[ 4 ] ) = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
+				Vector4I	negMask = loadFromMemory( negMaskA );
+
+				Vector4I	bPart = _mm_and_si128( _mm_castps_si128( b ), blendMask );
+				Vector4I	negBlendMask = _mm_xor_si128( blendMask, negMask );
+				
+				return _mm_castsi128_ps( add( bPart, _mm_and_si128( _mm_castps_si128( a ), negBlendMask ) ) );
+			}
+
 
 			// Exponential
 			static inline
