@@ -28,7 +28,7 @@ namespace noise
 }
 
 #if defined( LIBNOISE2_AT_LEAST_SSE2 )
-#include <noise/module/gabor/Gabor_SSE2.hpp>
+#include <noise/module/gabor/Gabor_Vector4.hpp>
 namespace noise
 {
 	namespace module
@@ -40,7 +40,7 @@ namespace noise
 	}
 }
 #else
-#include <noise/module/gabor/Gabor_No_SSE.hpp>
+#include <noise/module/gabor/Gabor_Scalar.hpp>
 namespace noise
 {
 	namespace module
