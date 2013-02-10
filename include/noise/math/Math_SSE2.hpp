@@ -29,8 +29,6 @@ namespace noise
 
 		public:
 		
-			typedef __m128i			Vector2I;
-			typedef __m128i			Vector3I;
 			typedef __m128i			Vector4I;
 
 
@@ -70,8 +68,58 @@ namespace noise
 			}
 
 
+			// Constants
+			static inline
+			Vector4I
+			constFullMaskI()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( uint32, fullMaskA, 0xffffffff );
+				return loadFromMemory( fullMaskA );
+			}
+
+			static inline
+			Vector4I
+			constZeroI()
+			{
+				return _mm_setzero_si128();
+			}
+
+			static inline
+			Vector4F
+			constOneI()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, oneA, 1 );
+				return loadFromMemory( oneA );
+			}
+
+			static inline
+			Vector4F
+			constInvOneI()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, oneA, ~1 );
+				return loadFromMemory( oneA );
+			}
+
+			static inline
+			Vector4F
+			constTwoI()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, twoA, 2 );
+				return loadFromMemory( twoA );
+			}
+
+			static inline
+			Vector4F
+			constFourI()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, fourA, 4 );
+				return loadFromMemory( fourA );
+			}
+
+
 			// Vectorization
 			using Math_SSE1::vectorizeOne;
+			using Math_SSE1::vectorize;
 
 			static inline
 			Vector4I
@@ -88,14 +136,14 @@ namespace noise
 			}
 		
 			static inline
-			Vector2I
+			Vector4I
 			vectorize( const ScalarI& x, const ScalarI& y )
 			{
 				return _mm_set_epi32( 0, 0, y, x );
 			}
 		
 			static inline
-			Vector3I
+			Vector4I
 			vectorize( const ScalarI& x, const ScalarI& y, const ScalarI& z )
 			{
 				return _mm_set_epi32( 0, z, y, x );
@@ -122,6 +170,33 @@ namespace noise
 			intToFloat( const Vector4I& v )
 			{
 				return _mm_cvtepi32_ps( v );
+			}
+
+			// Casts
+			static inline
+			Vector4F
+			castToFloat( const Vector4I& v )
+			{
+				return _mm_castsi128_ps( v );
+			}
+
+			static inline
+			Vector4I
+			castToInt( const Vector4F& v )
+			{
+				return _mm_castps_si128( v );
+			}
+
+
+			// Shuffle operations
+			using Math_SSE1::shuffle;
+
+			template< typename OrderPolicy >
+			static inline
+			Vector4I
+			shuffle( const Vector4I& v )
+			{
+				return _mm_shuffle_epi32( v, OrderPolicy::OrderValue );
 			}
 
 
@@ -156,6 +231,9 @@ namespace noise
 
 
 			// Comparison
+			using Math_SSE1::equal;
+			using Math_SSE1::greaterThan;
+
 			static inline
 			bool
 			isAllZeros( const Vector4I& v )
@@ -163,13 +241,53 @@ namespace noise
     			return _mm_movemask_epi8( _mm_cmpeq_epi8( v, _mm_setzero_si128() ) ) == 0xFFFF;
 			}
 
+			static inline
+			Vector4I
+			equal( const Vector4I& l, const Vector4I& r )
+			{
+				return _mm_cmpeq_epi32( l, r );
+			}
+
+			static inline
+			Vector4I
+			greaterThan( const Vector4I& l, const Vector4I& r )
+			{
+				return _mm_cmpgt_epi32( l, r );
+			}
+
+
+			// Logical
+			static inline
+			Vector4I
+			bitAnd( const Vector4I& l, const Vector4I& r )
+			{
+				return _mm_and_si128( l, r );
+			}
+
+			static inline
+			Vector4I
+			bitOr( const Vector4I& l, const Vector4I& r )
+			{
+				return _mm_or_si128( l, r );
+			}
+
+			static inline
+			Vector4I
+			bitXor( const Vector4I& l, const Vector4I& r )
+			{
+				return _mm_xor_si128( l, r );
+			}
+
 
 			// Shift operations
+			using Math_SSE1::shiftRightLoop;
+			using Math_SSE1::shiftLeftLoop;
+
 			static inline
 			Vector4I
 			shiftRightLogical( const Vector4F& v, int bitCount )
 			{
-				return _mm_srli_epi32( _mm_castps_si128( v ), bitCount );
+				return shiftRightLogical( castToInt( v ), bitCount );
 			}
 
 			static inline
@@ -181,13 +299,20 @@ namespace noise
 
 			static inline
 			Vector4I
+			shiftLeftLogical( const Vector4I& v, int bitCount )
+			{
+				return _mm_slli_epi32( v, bitCount );
+			}
+
+			static inline
+			Vector4I
 			shiftRightLoop( const Vector4I& v, int count )
 			{
 				Vector4I	shiftedV = v;
 
 				for( int i = 0; i < count; ++i )
 				{
-					shiftedV = _mm_shuffle_epi32( shiftedV, _MM_SHUFFLE( 0, 3, 2, 1 ) );
+					shiftedV = shuffle< Order< 3, 0, 1, 2 > >( shiftedV );
 				}
 
 				return shiftedV;
@@ -195,9 +320,16 @@ namespace noise
 
 			static inline
 			Vector4I
-			shiftRightLoop( const Vector4F& v, int count )
+			shiftLeftLoop( const Vector4I& v, int count )
 			{
-				return _mm_castsi128_ps( shiftRightLoop( _mm_castps_si128( v ), count ) );
+				Vector4I	shiftedV = v;
+
+				for( int i = 0; i < count; ++i )
+				{
+					shiftedV = shuffle< Order< 1, 2, 3, 0 > >( shiftedV );
+				}
+
+				return shiftedV;
 			}
 
 			// Misc operations
@@ -205,13 +337,12 @@ namespace noise
 			Vector4F
 			blend( const Vector4F& a, const Vector4F& b, const Vector4I blendMask )
 			{
-				static VECTOR4_ALIGN( ScalarUI	negMaskA[ 4 ] ) = { 0xffffffff, 0xffffffff, 0xffffffff, 0xffffffff };
-				Vector4I	negMask = loadFromMemory( negMaskA );
+				Vector4I	negMask = constFullMaskI();
 
-				Vector4I	bPart = _mm_and_si128( _mm_castps_si128( b ), blendMask );
-				Vector4I	negBlendMask = _mm_xor_si128( blendMask, negMask );
+				Vector4I	bPart = bitAnd( castToInt( b ), blendMask );
+				Vector4I	negBlendMask = bitXor( blendMask, negMask );
 				
-				return _mm_castsi128_ps( add( bPart, _mm_and_si128( _mm_castps_si128( a ), negBlendMask ) ) );
+				return castToFloat( add( bPart, bitAnd( castToInt( a ), negBlendMask ) ) );
 			}
 
 
@@ -220,32 +351,34 @@ namespace noise
 			Vector4F
 			exp( const Vector4F& v )
 			{
-				static const float		exp_hi = 88.3762626647949f;
-				static const float		exp_lo = -88.3762626647949f;
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, exp_hi, 88.3762626647949f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, exp_lo, -88.3762626647949f );
+				
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_log2ef, 1.44269504088896341f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_exp_C1, 0.693359375f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_exp_C2, -2.12194440e-4f );
+				
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_exp_p0, 1.9875691500E-4f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_exp_p1, 1.3981999507E-3f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_exp_p2, 8.3334519073E-3f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_exp_p3, 4.1665795894E-2f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_exp_p4, 1.6666665459E-1f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_exp_p5, 5.0000001201E-1f );
 
-				static const float		cephes_log2ef = 1.44269504088896341f;
-				static const float		cephes_exp_C1 = 0.693359375f;
-				static const float		cephes_exp_C2 = -2.12194440e-4f;
-
-				static const float		cephes_exp_p0 = 1.9875691500E-4f;
-				static const float		cephes_exp_p1 = 1.3981999507E-3f;
-				static const float		cephes_exp_p2 = 8.3334519073E-3f;
-				static const float		cephes_exp_p3 = 4.1665795894E-2f;
-				static const float		cephes_exp_p4 = 1.6666665459E-1f;
-				static const float		cephes_exp_p5 = 5.0000001201E-1f;
-
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, i127, 0x7f );
+				
 				Vector4F	x = v;
-				Vector4F	tmp = _mm_setzero_ps();
+				Vector4F	tmp = constZeroF();
 				Vector4F	fx;
 				Vector4I	emm0i;
-				Vector4F	one = _mm_set1_ps( 1.0f );
+				Vector4F	one = constOneF();
 
-				x = _mm_min_ps( x, _mm_set1_ps( exp_hi ) );
-				x = _mm_max_ps( x, _mm_set1_ps( exp_lo ) );
+				x = _mm_min_ps( x, loadFromMemory( exp_hi ) );
+				x = _mm_max_ps( x, loadFromMemory( exp_lo ) );
 
 				/* express exp(x) as exp(g + n*log(2)) */
-				fx = _mm_mul_ps( x, _mm_set1_ps( cephes_log2ef ) );
-				fx = _mm_add_ps( fx, _mm_set1_ps( 0.5f ) );
+				fx = _mm_mul_ps( x, loadFromMemory( cephes_log2ef ) );
+				fx = _mm_add_ps( fx, constHalfF() );
 
 				/* how to perform a floorf with SSE: just below */
 				emm0i = _mm_cvttps_epi32( fx );
@@ -256,31 +389,31 @@ namespace noise
 				mask = _mm_and_ps( mask, one );
 				fx = _mm_sub_ps( tmp, mask );
 
-				tmp = _mm_mul_ps( fx, _mm_set1_ps( cephes_exp_C1 ) );
-				Vector4F	z = _mm_mul_ps( fx, _mm_set1_ps( cephes_exp_C2 ) );
+				tmp = _mm_mul_ps( fx, loadFromMemory( cephes_exp_C1 ) );
+				Vector4F	z = _mm_mul_ps( fx, loadFromMemory( cephes_exp_C2 ) );
 				x = _mm_sub_ps( x, tmp );
 				x = _mm_sub_ps( x, z );
 
 				z = _mm_mul_ps( x, x );
 
-				Vector4F	y = _mm_set1_ps( cephes_exp_p0 );
+				Vector4F	y = loadFromMemory( cephes_exp_p0 );
 				y = _mm_mul_ps( y, x );
-				y = _mm_add_ps( y, _mm_set1_ps( cephes_exp_p1 ) );
+				y = _mm_add_ps( y, loadFromMemory( cephes_exp_p1 ) );
 				y = _mm_mul_ps( y, x );
-				y = _mm_add_ps( y, _mm_set1_ps( cephes_exp_p2 ) );
+				y = _mm_add_ps( y, loadFromMemory( cephes_exp_p2 ) );
 				y = _mm_mul_ps( y, x );
-				y = _mm_add_ps( y, _mm_set1_ps( cephes_exp_p3 ) );
+				y = _mm_add_ps( y, loadFromMemory( cephes_exp_p3 ) );
 				y = _mm_mul_ps( y, x );
-				y = _mm_add_ps( y, _mm_set1_ps( cephes_exp_p4 ) );
+				y = _mm_add_ps( y, loadFromMemory( cephes_exp_p4 ) );
 				y = _mm_mul_ps( y, x );
-				y = _mm_add_ps( y, _mm_set1_ps( cephes_exp_p5 ) );
+				y = _mm_add_ps( y, loadFromMemory( cephes_exp_p5 ) );
 				y = _mm_mul_ps( y, z );
 				y = _mm_add_ps( y, x );
 				y = _mm_add_ps( y, one );
 
 				/* build 2^n */
 				emm0i = _mm_cvttps_epi32( fx) ;
-				emm0i = _mm_add_epi32( emm0i, _mm_set1_epi32( 0x7f ) );
+				emm0i = _mm_add_epi32( emm0i, loadFromMemory( i127 ) );
 				emm0i = _mm_slli_epi32( emm0i, 23 );
 				Vector4F	pow2n = _mm_castsi128_ps( emm0i );
 				y = _mm_mul_ps( y, pow2n );
@@ -294,59 +427,58 @@ namespace noise
 			Vector4F
 			cos( const Vector4F& v )
 			{
-				static const int		sign_mask = 0x80000000;
-				static const int		inv_sign_mask = ~0x80000000;
-
-				static const float		minus_cephes_DP1 = -0.78515625f;
-				static const float		minus_cephes_DP2 = -2.4187564849853515625e-4f;
-				static const float		minus_cephes_DP3 = -3.77489497744594108e-8f;
-				static const float		sincof_p0 = -1.9515295891E-4f;
-				static const float		sincof_p1 = 8.3321608736E-3f;
-				static const float		sincof_p2 = -1.6666654611E-1f;
-				static const float		coscof_p0 = 2.443315711809948E-005f;
-				static const float		coscof_p1 = -1.388731625493765E-003f;
-				static const float		coscof_p2 = 4.166664568298827E-002f;
-				static const float		cephes_FOPI = 1.27323954473516f;
-
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int, inv_sign_mask, ~0x80000000 );
+				
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP1, -0.78515625f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP2, -2.4187564849853515625e-4f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP3, -3.77489497744594108e-8f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, sincof_p0, -1.9515295891E-4f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, sincof_p1, 8.3321608736E-3f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, sincof_p2, -1.6666654611E-1f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, coscof_p0, 2.443315711809948E-005f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, coscof_p1, -1.388731625493765E-003f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, coscof_p2, 4.166664568298827E-002f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_FOPI, 1.27323954473516f );
+				
 				Vector4F	x = v;
 				Vector4F	xmm1;
-				Vector4F	xmm2 = _mm_setzero_ps();
+				Vector4F	xmm2 = constZeroF();
 				Vector4F	xmm3;
 				Vector4F	y;
 				Vector4I	emm0;
 				Vector4I	emm2;
 
 				/* take the absolute value */
-				x = _mm_and_ps( x, _mm_set1_ps( *((float*)((void*)&inv_sign_mask)) ) );
-
+				x = _mm_and_ps( x, loadFromMemory( (ScalarI*) inv_sign_mask ) );
+				
 				/* scale by 4/Pi */
-				y = _mm_mul_ps( x, _mm_set1_ps( cephes_FOPI ) );
+				y = _mm_mul_ps( x, loadFromMemory( cephes_FOPI ) );
 
 				/* store the integer part of y in mm0 */
 				emm2 = _mm_cvttps_epi32( y );
 				/* j=(j+1) & (~1) (see the cephes sources) */
-				emm2 = _mm_add_epi32( emm2, _mm_set1_epi32( 1 ) );
-				emm2 = _mm_and_si128( emm2, _mm_set1_epi32( ~1 ) );
+				emm2 = _mm_add_epi32( emm2, constOneI() );
+				emm2 = _mm_and_si128( emm2, constInvOneI() );
 				y = _mm_cvtepi32_ps( emm2 );
 
-				emm2 = _mm_sub_epi32( emm2, _mm_set1_epi32( 2 ) );
+				emm2 = _mm_sub_epi32( emm2, constTwoI() );
 
 				/* get the swap sign flag */
-				emm0 = _mm_andnot_si128( emm2, _mm_set1_epi32( 4 ) );
+				emm0 = _mm_andnot_si128( emm2, constFourI() );
 				emm0 = _mm_slli_epi32( emm0, 29 );
 
 				/* get the polynom selection mask */
-				emm2 = _mm_and_si128( emm2, _mm_set1_epi32( 2 ));
-				emm2 = _mm_cmpeq_epi32( emm2, _mm_setzero_si128() );
+				emm2 = _mm_and_si128( emm2, constTwoI() );
+				emm2 = _mm_cmpeq_epi32( emm2, constZeroI() );
 
 				Vector4F	signBit = _mm_castsi128_ps( emm0 );
 				Vector4F	polyMask = _mm_castsi128_ps( emm2 );
 
 				/* The magic pass: "Extended precision modular arithmetic" 
 				x = ((x - y * DP1) - y * DP2) - y * DP3; */
-				xmm1 = _mm_set1_ps( minus_cephes_DP1 );
-				xmm2 = _mm_set1_ps( minus_cephes_DP2 );
-				xmm3 = _mm_set1_ps( minus_cephes_DP3 );
+				xmm1 = loadFromMemory( minus_cephes_DP1 );
+				xmm2 = loadFromMemory( minus_cephes_DP2 );
+				xmm3 = loadFromMemory( minus_cephes_DP3 );
 				xmm1 = _mm_mul_ps( y, xmm1 );
 				xmm2 = _mm_mul_ps( y, xmm2 );
 				xmm3 = _mm_mul_ps( y, xmm3 );
@@ -356,25 +488,25 @@ namespace noise
 
 				/* Evaluate the first polynom  (0 <= x <= Pi/4) */
 				Vector4F	z = _mm_mul_ps( x, x );
-				y = _mm_set1_ps( coscof_p0 );
+				y = loadFromMemory( coscof_p0 );
 
 				y = _mm_mul_ps( y, z );
-				y = _mm_add_ps( y, _mm_set1_ps( coscof_p1 ) );
+				y = _mm_add_ps( y, loadFromMemory( coscof_p1 ) );
 				y = _mm_mul_ps( y, z );
-				y = _mm_add_ps( y, _mm_set1_ps( coscof_p2 ) );
+				y = _mm_add_ps( y, loadFromMemory( coscof_p2 ) );
 				y = _mm_mul_ps( y, z );
 				y = _mm_mul_ps( y, z );
-				Vector4F	tmp = _mm_mul_ps( z, _mm_set1_ps( 0.5f ) );
+				Vector4F	tmp = _mm_mul_ps( z, constHalfF() );
 				y = _mm_sub_ps( y, tmp );
-				y = _mm_add_ps( y, _mm_set1_ps( 1.0f ) );
+				y = _mm_add_ps( y, constOneF() );
 
 				/* Evaluate the second polynom  (Pi/4 <= x <= 0) */
 
-				Vector4F	y2 = _mm_set1_ps( sincof_p0 );
+				Vector4F	y2 = loadFromMemory( sincof_p0 );
 				y2 = _mm_mul_ps( y2, z );
-				y2 = _mm_add_ps( y2, _mm_set1_ps( sincof_p1 ) );
+				y2 = _mm_add_ps( y2, loadFromMemory( sincof_p1 ) );
 				y2 = _mm_mul_ps( y2, z );
-				y2 = _mm_add_ps( y2, _mm_set1_ps( sincof_p2 ) );
+				y2 = _mm_add_ps( y2, loadFromMemory( sincof_p2 ) );
 				y2 = _mm_mul_ps( y2, z );
 				y2 = _mm_mul_ps( y2, x );
 				y2 = _mm_add_ps( y2, x );
@@ -394,59 +526,59 @@ namespace noise
 			void
 			sinCos( const Vector4F& v, Vector4F& sinV, Vector4F& cosV )
 			{
-				static const int		sign_mask = 0x80000000;
-				static const int		inv_sign_mask = ~0x80000000;
-
-				static const float		minus_cephes_DP1 = -0.78515625f;
-				static const float		minus_cephes_DP2 = -2.4187564849853515625e-4f;
-				static const float		minus_cephes_DP3 = -3.77489497744594108e-8f;
-				static const float		sincof_p0 = -1.9515295891E-4f;
-				static const float		sincof_p1 = 8.3321608736E-3f;
-				static const float		sincof_p2 = -1.6666654611E-1f;
-				static const float		coscof_p0 = 2.443315711809948E-005f;
-				static const float		coscof_p1 = -1.388731625493765E-003f;
-				static const float		coscof_p2 = 4.166664568298827E-002f;
-				static const float		cephes_FOPI = 1.27323954473516f;
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int, sign_mask, 0x80000000 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int, inv_sign_mask, ~0x80000000 );
+				
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP1, -0.78515625f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP2, -2.4187564849853515625e-4f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP3, -3.77489497744594108e-8f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, sincof_p0, -1.9515295891E-4f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, sincof_p1, 8.3321608736E-3f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, sincof_p2, -1.6666654611E-1f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, coscof_p0, 2.443315711809948E-005f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, coscof_p1, -1.388731625493765E-003f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, coscof_p2, 4.166664568298827E-002f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, cephes_FOPI, 1.27323954473516f );
 
 				Vector4F	x = v;
-				Vector4F		xmm1;
-				Vector4F		xmm2;
-				Vector4F		xmm3 = _mm_setzero_ps();
-				Vector4F		signBitSin;
-				Vector4F		y;
-				Vector4I		emm0;
-				Vector4I		emm2;
-				Vector4I		emm4;
+				Vector4F	xmm1;
+				Vector4F	xmm2;
+				Vector4F	xmm3 = _mm_setzero_ps();
+				Vector4F	signBitSin;
+				Vector4F	y;
+				Vector4I	emm0;
+				Vector4I	emm2;
+				Vector4I	emm4;
 
 				signBitSin = x;
-				x = _mm_and_ps( x, _mm_set1_ps( *((float*)((void*)&inv_sign_mask)) ) );
-				signBitSin = _mm_and_ps( signBitSin, _mm_set1_ps( *((float*)((void*)&sign_mask)) ) );
+				x = _mm_and_ps( x, loadFromMemory( (ScalarI*) inv_sign_mask ) );
+				signBitSin = _mm_and_ps( signBitSin, loadFromMemory( (ScalarI*) sign_mask ) );
 
-				y = _mm_mul_ps( x, _mm_set1_ps( cephes_FOPI ) );
+				y = _mm_mul_ps( x, loadFromMemory( cephes_FOPI ) );
 
 				emm2 = _mm_cvttps_epi32( y );
 
-				emm2 = _mm_add_epi32( emm2, _mm_set1_epi32( 1 ) );
-				emm2 = _mm_and_si128( emm2, _mm_set1_epi32( ~1 ) );
+				emm2 = _mm_add_epi32( emm2, constOneI() );
+				emm2 = _mm_and_si128( emm2, constInvOneI() );
 				y = _mm_cvtepi32_ps( emm2 );
 
 				emm4 = emm2;
 
 				/* get the swap sign flag for the sseSin */
-				emm0 = _mm_and_si128( emm2, _mm_set1_epi32( 4 ) );
+				emm0 = _mm_and_si128( emm2, constFourI() );
 				emm0 = _mm_slli_epi32( emm0, 29 );
 				Vector4F	swapSignBitSin = _mm_castsi128_ps( emm0 );
 
 				/* get the polynom selection mask for the sseSin*/
-				emm2 = _mm_and_si128( emm2, _mm_set1_epi32( 2 ) );
-				emm2 = _mm_cmpeq_epi32( emm2, _mm_setzero_si128() );
+				emm2 = _mm_and_si128( emm2, constTwoI() );
+				emm2 = _mm_cmpeq_epi32( emm2, constZeroI() );
 				Vector4F	polyMask = _mm_castsi128_ps( emm2 );
 
 				/* The magic pass: "Extended precision modular arithmetic" 
 		 		   x = ((x - y * DP1) - y * DP2) - y * DP3; */
-				xmm1 = _mm_set1_ps( minus_cephes_DP1 );
-				xmm2 = _mm_set1_ps( minus_cephes_DP2 );
-				xmm3 = _mm_set1_ps( minus_cephes_DP3 );
+				xmm1 = loadFromMemory( minus_cephes_DP1 );
+				xmm2 = loadFromMemory( minus_cephes_DP2 );
+				xmm3 = loadFromMemory( minus_cephes_DP3 );
 				xmm1 = _mm_mul_ps( y, xmm1 );
 				xmm2 = _mm_mul_ps( y, xmm2 );
 				xmm3 = _mm_mul_ps( y, xmm3 );
@@ -454,8 +586,8 @@ namespace noise
 				x = _mm_add_ps( x, xmm2 );
 				x = _mm_add_ps( x, xmm3 );
 
-				emm4 = _mm_sub_epi32( emm4, _mm_set1_epi32( 2 ) );
-				emm4 = _mm_andnot_si128( emm4, _mm_set1_epi32( 4 ) );
+				emm4 = _mm_sub_epi32( emm4, constTwoI() );
+				emm4 = _mm_andnot_si128( emm4, constFourI() );
 				emm4 = _mm_slli_epi32( emm4, 29 );
 				Vector4F	signBitCos = _mm_castsi128_ps( emm4 );
 
@@ -463,24 +595,24 @@ namespace noise
 
 				/* Evaluate the first polynom  (0 <= x <= Pi/4) */
 				Vector4F	z = _mm_mul_ps( x, x );
-				y = _mm_set1_ps( coscof_p0 );
+				y = loadFromMemory( coscof_p0 );
 
 				y = _mm_mul_ps( y, z );
-				y = _mm_add_ps( y, _mm_set1_ps( coscof_p1 ) );
+				y = _mm_add_ps( y, loadFromMemory( coscof_p1 ) );
 				y = _mm_mul_ps( y, z );
-				y = _mm_add_ps( y, _mm_set1_ps( coscof_p2 ) );
+				y = _mm_add_ps( y, loadFromMemory( coscof_p2 ) );
 				y = _mm_mul_ps( y, z );
 				y = _mm_mul_ps( y, z );
-				Vector4F	tmp = _mm_mul_ps( z, _mm_set1_ps( 0.5f ) );
+				Vector4F	tmp = _mm_mul_ps( z, constHalfF() );
 				y = _mm_sub_ps( y, tmp );
-				y = _mm_add_ps( y, _mm_set1_ps( 1.0f ) );
+				y = _mm_add_ps( y, constOneF() );
 
 				/* Evaluate the second polynom  (Pi/4 <= x <= 0) */
-				Vector4F	y2 = _mm_set1_ps( sincof_p0 );
+				Vector4F	y2 = loadFromMemory( sincof_p0 );
 				y2 = _mm_mul_ps( y2, z );
-				y2 = _mm_add_ps( y2, _mm_set1_ps( sincof_p1 ) );
+				y2 = _mm_add_ps( y2, loadFromMemory( sincof_p1 ) );
 				y2 = _mm_mul_ps( y2, z );
-				y2 = _mm_add_ps( y2, _mm_set1_ps( sincof_p2 ) );
+				y2 = _mm_add_ps( y2, loadFromMemory( sincof_p2 ) );
 				y2 = _mm_mul_ps( y2, z );
 				y2 = _mm_mul_ps( y2, x );
 				y2 = _mm_add_ps( y2, x );

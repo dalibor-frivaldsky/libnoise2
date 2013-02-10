@@ -1,6 +1,9 @@
 #pragma once
 
 
+#include <noise/BasicTypes.hpp>
+
+
 
 
 namespace noise
@@ -15,9 +18,9 @@ namespace noise
 
 			public:
 		
-			typedef ValueType		ScalarF;
-			typedef int				ScalarI;
-			typedef unsigned int	ScalarUI;
+			typedef ValueType	ScalarF;
+			typedef int32		ScalarI;
+			typedef uint32		ScalarUI;
 
 
 

@@ -38,52 +38,55 @@ namespace noise
 
 			public:
 
+				inline
 				PrngVector( const typename M::Vector4I& seed ):
 				  x( seed )
 				{
 				}
 
+				inline
 				typename M::Vector4I
 				getSeed()
 				{
 					return x;
 				}
 
+				inline
 				typename M::Vector4I
 				operator()()
 				{
-					static VECTOR4_ALIGN( unsigned int	primeA[ 4 ] ) = { 3039177861u, 3039177861u, 3039177861u, 3039177861u };
-					typename M::Vector4I	primeV = M::loadFromMemory( (typename M::ScalarI*) primeA );
+					LIBNOISE2_SUPPORT_CONST_ARRAY( uint32, primeA, 3039177861u );
+					typename M::Vector4I	primeV = M::loadFromMemory( primeA );
 
 					x = M::multiply( x, primeV );
 					return x;
 				}
 
+				inline
 				typename M::Vector4F
 				uniformNormalized()
 				{
-					static VECTOR4_ALIGN( ValueType	uintMaxA[ 4 ] ) = { ValueType( UINT_MAX >> 1 ), ValueType( UINT_MAX >> 1 ), ValueType( UINT_MAX >> 1 ), ValueType( UINT_MAX >> 1 ) };
-
+					LIBNOISE2_SUPPORT_CONST_ARRAY( ValueType, uintMaxA, ValueType( UINT_MAX >> 1 ) );
+					
 					// TODO mention in the thesis, shifted by one to right to overcome unit->float limitation, result practically the same
-					typename M::Vector4I	shiftedV = _mm_srli_epi32( (*this)(), 1 );
+					typename M::Vector4I	shiftedV = M::shiftRightLogical( (*this)(), 1 );
 					typename M::Vector4F	nextRandV = M::intToFloat( shiftedV );
 					typename M::Vector4F	uintMaxV = M::loadFromMemory( uintMaxA );
 					return M::divide( nextRandV, uintMaxV );
 				}
 
+				inline
 				typename M::Vector4F
 				uniformRangeMinusOneToOne()
 				{
-					static VECTOR4_ALIGN( ValueType	minusOneA[ 4 ] ) = { ValueType( -1.0 ), ValueType( -1.0 ), ValueType( -1.0 ), ValueType( -1.0 ) };
-					static VECTOR4_ALIGN( ValueType	twoA[ 4 ] ) = { ValueType( 2.0 ), ValueType( 2.0 ), ValueType( 2.0 ), ValueType( 2.0 ) };
-
-					typename M::Vector4F	minusOneV = M::loadFromMemory( minusOneA );
-					typename M::Vector4F	twoV = M::loadFromMemory( twoA );
+					typename M::Vector4F	minusOneV = M::constMinusOneF();
+					typename M::Vector4F	twoV = M::constTwoF();
 
 					typename M::Vector4F	normalV = uniformNormalized();
 					return M::add( minusOneV, M::multiply( normalV, twoV ) );
 				}
 
+				inline
 				typename M::Vector4F
 				uniformRange( const ValueType& min, const ValueType& max )
 				{
@@ -95,23 +98,21 @@ namespace noise
 				}
 
 				// TODO mention in the thesis
+				inline
 				typename M::Vector4I
 				poisson( const typename M::Vector4F& meanV )
 				{
-					static VECTOR4_ALIGN( ValueType		minusOneFA[ 4 ] ) = { -1.0, -1.0, -1.0, -1.0 };
-					static VECTOR4_ALIGN( unsigned int	oneIA[ 4 ] ) = { 1, 1, 1, 1 };
-					
-					typename M::Vector4I	oneIV = M::loadFromMemory( (typename M::ScalarI*) oneIA );
-					typename M::Vector4F	gV = M::exp( M::multiply( meanV, M::loadFromMemory( minusOneFA ) ) );
-					typename M::Vector4I	emV = _mm_setzero_si128();
+					typename M::Vector4I	oneIV = M::constOneI();
+					typename M::Vector4F	gV = M::exp( M::multiply( meanV, M::constMinusOneF() ) );
+					typename M::Vector4I	emV = M::constZeroI();
 					typename M::Vector4F	tV = uniformNormalized();
 
 					typename M::Vector4I	seedBackupV = x;
-					typename M::Vector4I	tgMaskV = _mm_castps_si128( _mm_cmpgt_ps( tV, gV ) );
+					typename M::Vector4I	tgMaskV = M::castToInt( M::greaterThan( tV, gV ) );
 
 					while( M::isAllZeros( tgMaskV ) == false )
 					{
-						typename M::Vector4I	incrementV = _mm_and_si128( oneIV, tgMaskV );
+						typename M::Vector4I	incrementV = M::bitAnd( oneIV, tgMaskV );
 						emV = M::add( emV, incrementV );
 
 						typename M::Vector4F	tMulV = uniformNormalized();
@@ -120,7 +121,7 @@ namespace noise
 						x = M::blend( seedBackupV, x, tgMaskV );
 
 						seedBackupV = x;
-						tgMaskV = _mm_castps_si128( _mm_cmpgt_ps( tV, gV ) );
+						tgMaskV = M::castToInt( M::greaterThan( tV, gV ) );
 					}
 
 					return emV;

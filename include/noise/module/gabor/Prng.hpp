@@ -5,6 +5,9 @@
 #include <cmath>
 
 
+#include <noise/BasicTypes.hpp>
+
+
 
 
 namespace noise
@@ -22,60 +25,68 @@ namespace noise
 
 			private:
 
-				unsigned int	x;
+				uint32	x;
 
 
 
 			public:
 
-				Prng( unsigned int seed ):
+				inline
+				Prng( uint32 seed ):
 				  x( seed )
 				{
 				}
 
+				inline
 				void
-				seed( unsigned int seed )
+				seed( uint32 seed )
 				{
 					x = seed;
 				}
 
-				unsigned int
+				inline
+				uint32
 				getSeed()
 				{
 					return x;
 				}
 
-				unsigned
+				inline
+				uint32
 				operator()()
 				{
 					x *= 3039177861u;
 					return x;
 				}
 
+				inline
 				ValueType
 				uniformNormalized()
 				{
 					return ValueType( (*this)() ) / ValueType( UINT_MAX );
 				}
 
+				inline
 				ValueType
 				uniformRangeMinusOneToOne()
 				{
 					return ValueType( -1.0 ) + (uniformNormalized() * ValueType( 2.0 ));
 				}
 
+				inline
 				ValueType
 				uniformRange( ValueType min, ValueType max )
 				{
 					return min + (uniformNormalized() * (max - min));
 				}
 
-				unsigned int
+				inline
+				uint32
 				poisson( ValueType mean )
 				{
-					ValueType		g = std::exp( -mean );
-					unsigned int	em = 0;
-					ValueType		t = uniformNormalized();
+					ValueType	g = std::exp( -mean );
+					uint32		em = 0;
+					ValueType	t = uniformNormalized();
 
 					while( t > g )
 					{

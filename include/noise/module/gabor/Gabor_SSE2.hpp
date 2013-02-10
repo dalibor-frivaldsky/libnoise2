@@ -66,19 +66,19 @@ namespace noise
 				ValueType	intY = M::floor( y );
 				ValueType	fracX = x - intX;
 				ValueType	fracY = y - intY;
-				int			i = int( intX );
-				int			j = int( intY );
+				int32		i = int32( intX );
+				int32		j = int32( intY );
 				ValueType	noise = ValueType( 0.0 );
 				typename M::Vector4F	fracXV = M::vectorizeOne( x - intX );
 				typename M::Vector4F	fracYV = M::vectorizeOne( y - intY );
 
-				static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
-				static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, 0, 1, -1 };
+				static VECTOR4_ALIGN( int32		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
+				static VECTOR4_ALIGN( int32		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, 0, 1, -1 };
 
 				typename M::Vector4I		iV = M::vectorizeOne( i );
 				typename M::Vector4I		jV = M::vectorizeOne( j );
 
-				for( int m = 0; m < 2; ++m )
+				for( int32 m = 0; m < 2; ++m )
 				{
 					typename M::Vector4I	diV = M::loadFromMemory( diA + (m * 4) );
 					typename M::Vector4I	djV = M::loadFromMemory( djA + (m * 4) );
@@ -91,9 +91,9 @@ namespace noise
 					noise += cellVectorized( mortonV, xV, yV );
 				}
 
-				for( int c = 8; c < 9; ++c )
+				for( int32 c = 8; c < 9; ++c )
 				{
-					unsigned int	s = morton( diA[ c ] + i, djA[ c ] + j );
+					uint32	s = morton( diA[ c ] + i, djA[ c ] + j );
 					noise += cell( s, fracX - diA[ c ], fracY - djA[ c ] );
 				}
 
@@ -106,15 +106,15 @@ namespace noise
 
 			inline
 			ValueType
-			cell( unsigned int s, ValueType x, ValueType y ) const
+			cell( uint32 s, ValueType x, ValueType y ) const
 			{
 				ValueType		noise = ValueType( 0.0 );
 
-				PrngType		prng( s );
-				ValueType		numberOfImpulsesPerCell = this->GetImpulseDensity() * this->GetKernelRadius() * this->GetKernelRadius();
-				unsigned int	numberOfImpulses = prng.poisson( numberOfImpulsesPerCell );
+				PrngType	prng( s );
+				ValueType	numberOfImpulsesPerCell = this->GetImpulseDensity() * this->GetKernelRadius() * this->GetKernelRadius();
+				uint32		numberOfImpulses = prng.poisson( numberOfImpulsesPerCell );
 
-				int		toCalculate = 0;
+				uint32		toCalculate = 0;
 				VECTOR4_ALIGN( ValueType	xInputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
 				VECTOR4_ALIGN( ValueType	yInputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
 				VECTOR4_ALIGN( ValueType	wiInputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
@@ -122,7 +122,7 @@ namespace noise
 				VECTOR4_ALIGN( ValueType	omega0InputA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
 
 
-				for( unsigned int i = 0; i < numberOfImpulses; ++i )
+				for( uint32 i = 0; i < numberOfImpulses; ++i )
 				{
 					ValueType	xi = prng.uniformNormalized();
 					ValueType	yi = prng.uniformNormalized();
@@ -156,10 +156,10 @@ namespace noise
 						typename M::Vector4F		gaborV = gaborVectorized( kV, aV, F0V, omega0V, xInputV, yInputV );
 						gaborV = M::multiply( wiV, gaborV );
 
-						SSE_ALIGN( ValueType	gaborResult[ 4 ] );
+						VECTOR4_ALIGN( ValueType	gaborResult[ 4 ] );
 						M::storeToMemory( gaborResult, gaborV );
 
-						for( int j = 0; j < toCalculate; ++j )
+						for( uint32 j = 0; j < toCalculate; ++j )
 						{
 							noise += gaborResult[ j ];
 						}
@@ -184,12 +184,12 @@ namespace noise
 
 				inline
 				Compacter():
-				  xInputVPrev( _mm_setzero_si128() ),
-				  yInputVPrev( _mm_setzero_si128() ),
-				  wiVPrev( _mm_setzero_si128() ),
-				  F0VPrev( _mm_setzero_si128() ),
-				  omega0VPrev( _mm_setzero_si128() ),
-				  calcMaskVPrev( _mm_setzero_si128() )
+				  xInputVPrev( M::constZeroF() ),
+				  yInputVPrev( M::constZeroF() ),
+				  wiVPrev( M::constZeroF() ),
+				  F0VPrev( M::constZeroF() ),
+				  omega0VPrev( M::constZeroF() ),
+				  calcMaskVPrev( M::constZeroI() )
 				{
 				}
 
@@ -214,8 +214,8 @@ namespace noise
 					omega0VPrev = M::shiftRightLoop( omega0VPrev, 1 );
 					calcMaskVPrev = M::shiftRightLoop( calcMaskVPrev, 1 );
 
-					typename M::Vector4I	compactMaskV = _mm_xor_si128( calcMaskVPrev, _mm_or_si128( calcMaskVPrev, calcMaskVNext ) );
-					typename M::Vector4I	keepMaskV = _mm_and_si128( calcMaskVPrev, calcMaskVNext );
+					typename M::Vector4I	compactMaskV = M::bitXor( calcMaskVPrev, M::bitOr( calcMaskVPrev, calcMaskVNext ) );
+					typename M::Vector4I	keepMaskV = M::bitAnd( calcMaskVPrev, calcMaskVNext );
 					bool	calculate = !M::isAllZeros( keepMaskV );
 					
 					xInputVNext = compactOne( compactMaskV, keepMaskV, xInputVPrev, xInputVNext, calculate );
@@ -226,11 +226,11 @@ namespace noise
 
 					if( calculate == false )
 					{
-						calcMaskVPrev = _mm_or_si128( calcMaskVPrev, calcMaskVNext );
+						calcMaskVPrev = M::bitOr( calcMaskVPrev, calcMaskVNext );
 					}
 					else
 					{
-						calcMaskVNext = _mm_or_si128( calcMaskVPrev, calcMaskVNext );
+						calcMaskVNext = M::bitOr( calcMaskVPrev, calcMaskVNext );
 						calcMaskVPrev = keepMaskV;
 					}
 
@@ -247,7 +247,7 @@ namespace noise
 							typename M::Vector4F& vPrev, const typename M::Vector4F& vNext, bool calculate )
 				{
 					typename M::Vector4F	compactV = M::blend( vPrev, vNext, compactMaskV );
-					typename M::Vector4F	keepV = _mm_castsi128_ps( _mm_and_si128( _mm_castps_si128( vNext ), keepMaskV ) );
+					typename M::Vector4F	keepV = M::castToFloat( M::bitAnd( M::castToInt( vNext ), keepMaskV ) );
 
 					if( calculate == false )
 					{
@@ -275,17 +275,17 @@ namespace noise
 				typename M::Vector4F	numberOfImpulsesPerCellV = M::multiply( impulseDensityV, M::multiply( kernelRadiusV, kernelRadiusV ) );
 				typename M::Vector4I	numberOfImpulsesV = prngVector.poisson( numberOfImpulsesPerCellV );
 
-				VECTOR4_ALIGN( unsigned int	numberOfImpulsesA[ 4 ] );
-				M::storeToMemory( (typename M::ScalarI*) numberOfImpulsesA, numberOfImpulsesV );
+				VECTOR4_ALIGN( uint32	numberOfImpulsesA[ 4 ] );
+				M::storeToMemory( numberOfImpulsesA, numberOfImpulsesV );
 
-				unsigned int			maxNumberOfImpulses = findMax( numberOfImpulsesA );
-				typename M::Vector4I	oneIV = M::vectorizeOne( (typename M::ScalarI) 1 );
-				typename M::Vector4F	oneFV = M::vectorizeOne( ValueType( 1.0 ) );
+				uint32					maxNumberOfImpulses = findMax( numberOfImpulsesA );
+				typename M::Vector4I	oneIV = M::constOneI();
+				typename M::Vector4F	oneFV = M::constOneF();
 
-				typename M::Vector4F	noiseV = _mm_setzero_ps();
-				for( unsigned int i = 0; i < maxNumberOfImpulses; ++i )
+				typename M::Vector4F	noiseV = M::constZeroF();
+				for( uint32 i = 0; i < maxNumberOfImpulses; ++i )
 				{
-					typename M::Vector4I	impulseMaskV = _mm_cmpgt_epi32( numberOfImpulsesV, _mm_setzero_si128() );
+					typename M::Vector4I	impulseMaskV = M::greaterThan( numberOfImpulsesV, M::constZeroI() );
 					typename M::Vector4F	xiV = prngVector.uniformNormalized();
 					typename M::Vector4F	yiV = prngVector.uniformNormalized();
 					typename M::Vector4F	wiV = prngVector.uniformRangeMinusOneToOne();
@@ -297,8 +297,8 @@ namespace noise
 					typename M::Vector4F	radiusXV = M::multiply( xInputV, xInputV );
 					typename M::Vector4F	radiusYV = M::multiply( yInputV, yInputV );
 					typename M::Vector4F	radiusV = M::add( radiusXV, radiusYV );
-					typename M::Vector4I	radiusMaskV = _mm_castps_si128( _mm_cmplt_ps( radiusV, oneFV ) );
-					typename M::Vector4I	calcMaskV = _mm_and_si128( radiusMaskV, impulseMaskV );
+					typename M::Vector4I	radiusMaskV = M::castToInt( M::lowerThan( radiusV, oneFV ) );
+					typename M::Vector4I	calcMaskV = M::bitAnd( radiusMaskV, impulseMaskV );
 
 					if( compacter.compact( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV ) == true )
 					{
@@ -314,7 +314,7 @@ namespace noise
 														   compacter.calcMaskVPrev ) );
 					}
 
-					numberOfImpulsesV = M::subtract( numberOfImpulsesV, _mm_and_si128( impulseMaskV, oneIV ) );
+					numberOfImpulsesV = M::subtract( numberOfImpulsesV, M::bitAnd( impulseMaskV, oneIV ) );
 				}
 
 				VECTOR4_ALIGN( typename M::ScalarF		noiseA[ 4 ] );
@@ -343,18 +343,18 @@ namespace noise
 
 				typename M::Vector4F	gaborV = gaborVectorized( kV, aV, F0V, omega0V, xV, yV );
 				gaborV = M::multiply( wiV, gaborV );
-				gaborV = _mm_and_si128( gaborV, calcMaskV );
+				gaborV = M::castToFloat( M::bitAnd( M::castToInt( gaborV ), calcMaskV ) );
 
 				return gaborV;
 			}
 
 			inline
-			unsigned int
-			morton( unsigned int x, unsigned int y ) const
+			uint32
+			morton( uint32 x, uint32 y ) const
 			{
-				unsigned int	z = 0;
+				uint32	z = 0;
 
-				for( unsigned int i = 0; i < (sizeof( unsigned int ) * CHAR_BIT); ++i )
+				for( uint32 i = 0; i < (sizeof( uint32 ) * CHAR_BIT); ++i )
 				{
 					z |= ((x & (1 << i)) << i) | ((y & (1 << i)) << (i + 1));
 				}
@@ -373,28 +373,28 @@ namespace noise
 			typename M::Vector4I
 			mortonVectorized( const typename M::Vector4I& xV, const typename M::Vector4I& yV ) const
 			{
-				typename M::Vector4I		zV = _mm_setzero_si128();
-				typename M::Vector4I		oneV = M::vectorizeOne( 1 );
+				typename M::Vector4I		zV = M::constZeroI();
+				typename M::Vector4I		oneV = M::constOneI();
 				typename M::Vector4I		seedV = M::vectorizeOne( this->GetSeed() );
 
-				for( unsigned int i = 0; i < (sizeof( unsigned int ) * CHAR_BIT); ++i )
+				for( uint32 i = 0; i < (sizeof( uint32 ) * CHAR_BIT); ++i )
 				{
-					typename M::Vector4I		left = _mm_slli_epi32( oneV, i );
-					left = _mm_and_si128( xV, left );
-					left = _mm_slli_epi32( left, i );
+					typename M::Vector4I		left = M::shiftLeftLogical( oneV, i );
+					left = M::bitAnd( xV, left );
+					left = M::shiftLeftLogical( left, i );
 
-					typename M::Vector4I		right = _mm_slli_epi32( oneV, i );
-					right = _mm_and_si128( right, yV );
-					right = _mm_slli_epi32( right, i + 1 );
+					typename M::Vector4I		right = M::shiftLeftLogical( oneV, i );
+					right = M::bitAnd( right, yV );
+					right = M::shiftLeftLogical( right, i + 1 );
 
-					typename M::Vector4I		tmp = _mm_or_si128( left, right );
-					zV = _mm_or_si128( zV, tmp );
+					typename M::Vector4I		tmp = M::bitOr( left, right );
+					zV = M::bitOr( zV, tmp );
 				}
 
 				zV = M::add( zV, seedV );
 
-				typename M::Vector4I		isZero = _mm_cmpeq_epi32( zV, _mm_setzero_si128() );
-				typename M::Vector4I		toOne = _mm_srli_epi32( isZero, 31 );
+				typename M::Vector4I		isZero = M::equal( zV, M::constZeroI() );
+				typename M::Vector4I		toOne = M::shiftRightLogical( isZero, 31 );
 				zV = M::add( zV, toOne );
 
 				return zV;
@@ -406,7 +406,7 @@ namespace noise
 							 const typename M::Vector4F& f0V, const typename M::Vector4F& omega0V,
 							 const typename M::Vector4F& xV, const typename M::Vector4F& yV ) const
 			{
-				typename M::Vector4F		piV = M::vectorizeOne( -M::Pi() );
+				typename M::Vector4F		piV = M::constMinusPiF();
 				typename M::Vector4F		aa = M::multiply( aV, aV );
 				typename M::Vector4F		xx = M::multiply( xV, xV );
 				typename M::Vector4F		yy = M::multiply( yV, yV );
@@ -424,7 +424,7 @@ namespace noise
 				typename M::Vector4F		ySinOmega = M::multiply( yV, sinOmega );
 				typename M::Vector4F		xCosYSin = M::add( xCosOmega, ySinOmega );
 
-				typename M::Vector4F		sinusoidalCarrier = M::multiply( M::vectorizeOne( 2.0f ), piV );
+				typename M::Vector4F		sinusoidalCarrier = M::multiply( M::constTwoF(), piV );
 				sinusoidalCarrier = M::multiply( sinusoidalCarrier, f0V );
 				sinusoidalCarrier = M::multiply( sinusoidalCarrier, xCosYSin );
 				sinusoidalCarrier = M::cos( sinusoidalCarrier );
@@ -446,11 +446,11 @@ namespace noise
 			}
 
 			inline
-			unsigned int
-			findMax( unsigned int* a ) const
+			uint32
+			findMax( uint32* a ) const
 			{
-				unsigned int	tmp1 = a[ 0 ] > a[ 1 ] ? a[ 0 ] : a[ 1 ];
-				unsigned int	tmp2 = a[ 2 ] > a[ 3 ] ? a[ 2 ] : a[ 3 ];
+				uint32	tmp1 = a[ 0 ] > a[ 1 ] ? a[ 0 ] : a[ 1 ];
+				uint32	tmp2 = a[ 2 ] > a[ 3 ] ? a[ 2 ] : a[ 3 ];
 				return tmp1 > tmp2 ? tmp1 : tmp2;
 			}
 

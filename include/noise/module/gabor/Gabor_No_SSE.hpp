@@ -26,7 +26,7 @@ namespace noise
 		public:
 
 			typedef ValueT								ValueType;
-			static const unsigned						Dimension = 2;
+			static const uint32							Dimension = 2;
 			typedef Module< ValueType, Dimension >		ModuleType;
 			typedef gabor::GaborBase< ValueType >		BaseType;
 			typedef Gabor< ValueType, Dimension >		ThisType;
@@ -57,13 +57,13 @@ namespace noise
 				ValueType	intY = M::floor( y );
 				ValueType	fracX = x - intX;
 				ValueType	fracY = y - intY;
-				int			i = int( intX );
-				int			j = int( intY );
+				int32			i = int( intX );
+				int32			j = int( intY );
 				ValueType	noise = ValueType( 0.0 );
 
-				for( int di = -1; di <= +1; ++di )
+				for( int32 di = -1; di <= +1; ++di )
 				{
-					for( int dj = -1; dj <= +1; ++dj )
+					for( int32 dj = -1; dj <= +1; ++dj )
 					{
 						noise += cell( i + di, j + dj, fracX - di, fracY - dj );
 					}
@@ -87,20 +87,20 @@ namespace noise
 
 			inline
 			ValueType
-			cell( int i, int j, ValueType x, ValueType y ) const
+			cell( int32 i, int32 j, ValueType x, ValueType y ) const
 			{
-				unsigned int	s = morton( i, j ) + this->GetSeed();
+				uint32	s = morton( i, j ) + this->GetSeed();
 
 				if( s == 0 )
 					s = 1;
 
 				PrngType	prng( s );
 				
-				ValueType		numberOfImpulsesPerCell = this->GetImpulseDensity() * this->GetKernelRadius() * this->GetKernelRadius();
-				unsigned int	numberOfImpulses = prng.poisson( numberOfImpulsesPerCell );
-				ValueType		noise = ValueType( 0.0 );
+				ValueType	numberOfImpulsesPerCell = this->GetImpulseDensity() * this->GetKernelRadius() * this->GetKernelRadius();
+				uint32		numberOfImpulses = prng.poisson( numberOfImpulsesPerCell );
+				ValueType	noise = ValueType( 0.0 );
 
-				for( unsigned int i = 0; i < numberOfImpulses; ++i)
+				for( uint32 i = 0; i < numberOfImpulses; ++i)
 				{
 					ValueType	xi = prng.uniformNormalized();
 					ValueType	yi = prng.uniformNormalized();
@@ -120,12 +120,12 @@ namespace noise
 			}
 
 			inline
-			unsigned int
-			morton( unsigned int x, unsigned int y ) const
+			uint32
+			morton( uint32 x, uint32 y ) const
 			{
-				unsigned int	z = 0;
+				uint32	z = 0;
 
-				for( unsigned int i = 0; i < (sizeof( unsigned int ) * CHAR_BIT); ++i )
+				for( uint32 i = 0; i < (sizeof( uint32 ) * CHAR_BIT); ++i )
 				{
 					z |= ((x & (1 << i)) << i) | ((y & (1 << i)) << (i + 1));
 				}

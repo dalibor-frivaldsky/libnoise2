@@ -12,6 +12,10 @@
 
 
 
+#define LIBNOISE2_SUPPORT_CONST_ARRAY( type, name, value )	static const VECTOR4_ALIGN( type name[ 4 ] ) = { value, value, value, value }
+
+
+
 namespace noise
 {
 
@@ -29,8 +33,6 @@ namespace noise
 
 		public:
 		
-			typedef __m128			Vector2F;
-			typedef __m128			Vector3F;
 			typedef __m128			Vector4F;
 
 
@@ -53,6 +55,63 @@ namespace noise
 			}
 
 
+			// Constants
+			static inline
+			Vector4F
+			constZeroF()
+			{
+				return _mm_setzero_ps();
+			}
+
+			static inline
+			Vector4F
+			constHalfF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, halfA, 0.5f );
+				return loadFromMemory( halfA );
+			}
+
+			static inline
+			Vector4F
+			constOneF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, oneA, 1.0f );
+				return loadFromMemory( oneA );
+			}
+
+			static inline
+			Vector4F
+			constMinusOneF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minusOneA, -1.0f );
+				return loadFromMemory( minusOneA );
+			}
+
+			static inline
+			Vector4F
+			constTwoF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, twoA, 2.0f );
+				return loadFromMemory( twoA );
+			}
+
+			static inline
+			Vector4F
+			constPiF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, piA, 3.14159265358979323846 );
+				return loadFromMemory( piA );
+			}
+
+			static inline
+			Vector4F
+			constMinusPiF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minusPiA, -3.14159265358979323846 );
+				return loadFromMemory( minusPiA );
+			}
+
+
 			// Vectorization
 			static inline
 			Vector4F
@@ -62,14 +121,14 @@ namespace noise
 			}
 		
 			static inline
-			Vector2F
+			Vector4F
 			vectorize( const ScalarF& x, const ScalarF& y )
 			{
 				return _mm_set_ps( 0.0f, 0.0f, y, x );
 			}
 		
 			static inline
-			Vector3F
+			Vector4F
 			vectorize( const ScalarF& x, const ScalarF& y, const ScalarF& z )
 			{
 				return _mm_set_ps( 0.0f, z, y, x );
@@ -80,6 +139,22 @@ namespace noise
 			vectorize( const ScalarF& x, const ScalarF& y, const ScalarF& z, const ScalarF& w )
 			{
 				return _mm_set_ps( w, z, y, x );
+			}
+
+
+			// Shuffle operations
+			template< uint8 First, uint8 Second, uint8 Third, uint8 Fourth >
+			struct Order
+			{
+				static const uint8		OrderValue = _MM_SHUFFLE( Fourth, Third, Second, First );
+			};
+
+			template< typename OrderPolicy >
+			static inline
+			Vector4F
+			shuffle( const Vector4F& a, const Vector4F& b )
+			{
+				return _mm_shuffle_ps( a, b, OrderPolicy::OrderValue );
 			}
 
 
@@ -112,32 +187,84 @@ namespace noise
 				return _mm_sub_ps( l, r );
 			}
 
+			// Comparison
+			static inline
+			Vector4F
+			equal( const Vector4F& l, const Vector4F& r )
+			{
+				return _mm_cmpeq_ps( l, r );
+			}
+
+			static inline
+			Vector4F
+			greaterThan( const Vector4F& l, const Vector4F& r )
+			{
+				return _mm_cmpgt_ps( l, r );
+			}
+
+			static inline
+			Vector4F
+			lowerThan( const Vector4F& l, const Vector4F& r )
+			{
+				return _mm_cmplt_ps( l, r );
+			}
+
+
+			// Shift operations
+			static inline
+			Vector4F
+			shiftRightLoop( const Vector4F& v, int count )
+			{
+				Vector4F	shiftedV = v;
+
+				for( int i = 0; i < count; ++i )
+				{
+					shiftedV = shuffle< Order< 3, 0, 1, 2 > >( shiftedV, shiftedV );
+				}
+
+				return shiftedV;
+			}
+
+			static inline
+			Vector4F
+			shiftLeftLoop( const Vector4F& v, int count )
+			{
+				Vector4F	shiftedV = v;
+
+				for( int i = 0; i < count; ++i )
+				{
+					shiftedV = shuffle< Order< 1, 2, 3, 0 > >( shiftedV, shiftedV );
+				}
+
+				return shiftedV;
+			}
+
 
 			// Distribution operations
 			static inline
 			Vector4F
-			vectorDistribute1st( const Vector4F& input )
+			distribute1st( const Vector4F& input )
 			{
 				return _mm_shuffle_ps( input, input, _MM_SHUFFLE( 0, 0, 0, 0 ) );
 			}
 
 			static inline
 			Vector4F
-			vectorDistribute2nd( const Vector4F& input )
+			distribute2nd( const Vector4F& input )
 			{
 				return _mm_shuffle_ps( input, input, _MM_SHUFFLE( 1, 1, 1, 1 ) );
 			}
 
 			static inline
 			Vector4F
-			vectorDistribute3rd( const Vector4F& input )
+			distribute3rd( const Vector4F& input )
 			{
 				return _mm_shuffle_ps( input, input, _MM_SHUFFLE( 2, 2, 2, 2 ) );
 			}
 
 			static inline
 			Vector4F
-			vectorDistribute4th( const Vector4F& input )
+			distribute4th( const Vector4F& input )
 			{
 				return _mm_shuffle_ps( input, input, _MM_SHUFFLE( 3, 3, 3, 3 ) );
 			}
