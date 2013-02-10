@@ -29,6 +29,17 @@ namespace noise
 
 		public:
 
+			// Arithmetic operations
+			using Math_SSSE3::multiply;
+
+			static inline
+			Vector4I
+			multiply( const Vector4I& l, const Vector4I& r )
+			{
+				return _mm_mullo_epi32( l, r );
+			}
+
+
 			// Misc operations
 			using Math_SSSE3::blend;
 
