@@ -72,10 +72,6 @@ namespace noise
 				typename M::Vector4F	fracXV = M::vectorizeOne( x - intX );
 				typename M::Vector4F	fracYV = M::vectorizeOne( y - intY );
 
-				//static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
-				//static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, -1, 0, 1 };
-				//static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, 1, 1, -1, 0, 0, 1, 0 };
-				//static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 1, -1, 1, 0, -1, 1, 0, 0 };
 				static VECTOR4_ALIGN( int		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
 				static VECTOR4_ALIGN( int		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, 0, 1, -1 };
 
@@ -92,8 +88,7 @@ namespace noise
 					typename M::Vector4F	yV = M::subtract( fracYV, M::intToFloat( djV ) );
 					typename M::Vector4I	mortonV = mortonVectorized( diiV, djjV );
 					
-					noise += cellVectorizedNoArrays( mortonV, xV, yV );
-					//noise += cellVectorized( mortonV, xV, yV );
+					noise += cellVectorized( mortonV, xV, yV );
 				}
 
 				for( int c = 8; c < 9; ++c )
@@ -270,9 +265,8 @@ namespace noise
 
 			inline
 			ValueType
-			cellVectorizedNoArrays( const typename M::Vector4I sV, const typename M::Vector4F xV, const typename M::Vector4F yV ) const
+			cellVectorized( const typename M::Vector4I sV, const typename M::Vector4F xV, const typename M::Vector4F yV ) const
 			{
-				ValueType	noise = ValueType( 0.0 );
 				Compacter	compacter;
 
 				PrngVectorType			prngVector( sV );
@@ -288,6 +282,7 @@ namespace noise
 				typename M::Vector4I	oneIV = M::vectorizeOne( (typename M::ScalarI) 1 );
 				typename M::Vector4F	oneFV = M::vectorizeOne( ValueType( 1.0 ) );
 
+				typename M::Vector4F	noiseV = _mm_setzero_ps();
 				for( unsigned int i = 0; i < maxNumberOfImpulses; ++i )
 				{
 					typename M::Vector4I	impulseMaskV = _mm_cmpgt_epi32( numberOfImpulsesV, _mm_setzero_si128() );
@@ -307,34 +302,40 @@ namespace noise
 
 					if( compacter.compact( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV ) == true )
 					{
-						noise += cellPart( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV );	
+						noiseV = M::add( noiseV, cellPart( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV ) );
 					}
 					if( i == maxNumberOfImpulses - 1 )
 					{
-						noise += cellPart( compacter.xInputVPrev,
-										   compacter.yInputVPrev,
-										   compacter.wiVPrev,
-										   compacter.F0VPrev,
-										   compacter.omega0VPrev,
-										   compacter.calcMaskVPrev );
+						noiseV = M::add( noiseV, cellPart( compacter.xInputVPrev,
+														   compacter.yInputVPrev,
+														   compacter.wiVPrev,
+														   compacter.F0VPrev,
+														   compacter.omega0VPrev,
+														   compacter.calcMaskVPrev ) );
 					}
 
 					numberOfImpulsesV = M::subtract( numberOfImpulsesV, _mm_and_si128( impulseMaskV, oneIV ) );
 				}
 
+				VECTOR4_ALIGN( typename M::ScalarF		noiseA[ 4 ] );
+				M::storeToMemory( noiseA, noiseV );
+				ValueType	noise = ValueType( 0.0 );
+				
+				for( int j = 0; j < 4; ++j )
+				{
+					noise += noiseA[ j ];
+				}
+				
 				return noise;
 			}
 
 			inline
-			ValueType
+			typename M::Vector4F
 			cellPart( const typename M::Vector4F& xInputV, const typename M::Vector4F& yInputV,
 					  const typename M::Vector4F& wiV, const typename M::Vector4F& F0V,
 					  const typename M::Vector4F& omega0V, const typename M::Vector4I& calcMaskV ) const
 			{
-				ValueType	noise = ValueType( 0.0 );
-
 				typename M::Vector4F	kernelRadiusV = M::vectorizeOne( this->GetKernelRadius() );
-
 				typename M::Vector4F	xV = M::multiply( xInputV, kernelRadiusV );
 				typename M::Vector4F	yV = M::multiply( yInputV, kernelRadiusV );
 				typename M::Vector4F	kV = M::vectorizeOne( this->GetK() );
@@ -344,166 +345,7 @@ namespace noise
 				gaborV = M::multiply( wiV, gaborV );
 				gaborV = _mm_and_si128( gaborV, calcMaskV );
 
-				VECTOR4_ALIGN( typename M::ScalarF		gaborA[ 4 ] );
-				M::storeToMemory( gaborA, gaborV );
-				
-				for( int j = 0; j < 4; ++j )
-				{
-					noise += gaborA[ j ];
-				}
-				
-				return noise;
-			}
-
-			inline
-			ValueType
-			cellVectorized( const typename M::Vector4I sV, const typename M::Vector4F xV, const typename M::Vector4F yV ) const
-			{
-				ValueType	noise = ValueType( 0.0 );
-
-				PrngVectorType			prngVector( sV );
-				typename M::Vector4F	impulseDensityV = M::vectorizeOne( this->GetImpulseDensity() );
-				typename M::Vector4F	kernelRadiusV = M::vectorizeOne( this->GetKernelRadius() );
-				typename M::Vector4F	numberOfImpulsesPerCellV = M::multiply( impulseDensityV, M::multiply( kernelRadiusV, kernelRadiusV ) );
-				typename M::Vector4I	numberOfImpulsesV = prngVector.poisson( numberOfImpulsesPerCellV );
-
-				VECTOR4_ALIGN( unsigned int	numberOfImpulsesA[ 4 ] );
-				M::storeToMemory( (typename M::ScalarI*) numberOfImpulsesA, numberOfImpulsesV );
-
-				unsigned int			maxNumberOfImpulses = findMax( numberOfImpulsesA );
-				typename M::Vector4I	oneIV = M::vectorizeOne( (typename M::ScalarI) 1 );
-				typename M::Vector4F	oneFV = M::vectorizeOne( ValueType( 1.0 ) );
-				
-				VECTOR4_ALIGN( ValueType				xInputA[ 4 ] );
-				VECTOR4_ALIGN( ValueType				yInputA[ 4 ] );
-				VECTOR4_ALIGN( ValueType				wiInputA[ 4 ] );
-				VECTOR4_ALIGN( ValueType				F0InputA[ 4 ] );
-				VECTOR4_ALIGN( ValueType				omega0InputA[ 4 ] );
-				VECTOR4_ALIGN( typename M::ScalarUI		calcMaskA[ 4 ] );
-
-				int		toCalculate = 0;
-				VECTOR4_ALIGN( ValueType	xInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR4_ALIGN( ValueType	yInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR4_ALIGN( ValueType	wiInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR4_ALIGN( ValueType	F0InputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR4_ALIGN( ValueType	omega0InputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-
-				for( unsigned int i = 0; i < maxNumberOfImpulses; ++i )
-				{
-					typename M::Vector4I	impulseMaskV = _mm_cmpgt_epi32( numberOfImpulsesV, _mm_setzero_si128() );
-					typename M::Vector4F	xiV = prngVector.uniformNormalized();
-					typename M::Vector4F	yiV = prngVector.uniformNormalized();
-					typename M::Vector4F	wiV = prngVector.uniformRangeMinusOneToOne();
-					typename M::Vector4F	F0V = prngVector.uniformRange( this->GetFrequencyRangeStart(), this->GetFrequencyRangeEnd() );
-					typename M::Vector4F	omega0V = prngVector.uniformRange( this->GetAngularRangeStart(), this->GetAngularRangeEnd() );
-					typename M::Vector4F	xixV = M::subtract( xV, xiV );
-					typename M::Vector4F	yiyV = M::subtract( yV, yiV );
-
-					typename M::Vector4F	radiusXV = M::multiply( xixV, xixV );
-					typename M::Vector4F	radiusYV = M::multiply( yiyV, yiyV );
-					typename M::Vector4F	radiusV = M::add( radiusXV, radiusYV );
-					typename M::Vector4I	radiusMaskV = _mm_castps_si128( _mm_cmplt_ps( radiusV, oneFV ) );
-					typename M::Vector4I	calcMaskV = _mm_and_si128( radiusMaskV, impulseMaskV );
-
-					M::storeToMemory( xInputA, xixV );
-					M::storeToMemory( yInputA, yiyV );
-					M::storeToMemory( wiInputA, wiV );
-					M::storeToMemory( F0InputA, F0V );
-					M::storeToMemory( omega0InputA, omega0V );
-					M::storeToMemory( calcMaskA, calcMaskV );
-
-					for( int j = 0; j < 4; ++j )
-					{
-						if( calcMaskA[ j ] == 0xffffffff )
-						{
-							xInputPartA[ toCalculate ] = xInputA[ j ];
-							yInputPartA[ toCalculate ] = yInputA[ j ];
-							wiInputPartA[ toCalculate ] = wiInputA[ j ];
-							F0InputPartA[ toCalculate ] = F0InputA[ j ];
-							omega0InputPartA[ toCalculate ] = omega0InputA[ j ];
-							++toCalculate;
-						}
-
-						if( toCalculate == 4 ||
-							(i == maxNumberOfImpulses - 1 && j == 3 && toCalculate > 0) )
-						{
-							typename M::Vector4F		xInputV = M::loadFromMemory( xInputPartA );
-							typename M::Vector4F		yInputV = M::loadFromMemory( yInputPartA );
-							typename M::Vector4F		kV = M::vectorizeOne( this->GetK() );
-							typename M::Vector4F		aV = M::vectorizeOne( this->GetA() );
-							typename M::Vector4F		F0V = M::loadFromMemory( F0InputPartA );
-							typename M::Vector4F		omega0V = M::loadFromMemory( omega0InputPartA );
-							typename M::Vector4F		wiV = M::loadFromMemory( wiInputPartA );
-
-							xInputV = M::multiply( xInputV, kernelRadiusV );
-							yInputV = M::multiply( yInputV, kernelRadiusV );
-
-							typename M::Vector4F		gaborV = gaborVectorized( kV, aV, F0V, omega0V, xInputV, yInputV );
-							gaborV = M::multiply( wiV, gaborV );
-
-							VECTOR4_ALIGN( ValueType	gaborResult[ 4 ] );
-							M::storeToMemory( gaborResult, gaborV );
-
-							for( int j = 0; j < toCalculate; ++j )
-							{
-								noise += gaborResult[ j ];
-							}
-
-							toCalculate = 0;
-						}
-					}
-
-					numberOfImpulsesV = M::subtract( numberOfImpulsesV, _mm_and_si128( impulseMaskV, oneIV ) );
-				}
-
-				/*int		toCalculate = 0;
-				VECTOR4_ALIGN( ValueType	xInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR4_ALIGN( ValueType	yInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR4_ALIGN( ValueType	wiInputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR4_ALIGN( ValueType	F0InputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				VECTOR4_ALIGN( ValueType	omega0InputPartA[ 4 ] ) = { 0.0f, 0.0f, 0.0f, 0.0f };
-				for( unsigned int g = 0; g < maxNumberOfImpulses * 4; ++g )
-				{
-					if( calcMaskA[ g ] == 0xffffffff )
-					{
-						xInputPartA[ toCalculate ] = xInputA[ g ];
-						yInputPartA[ toCalculate ] = yInputA[ g ];
-						wiInputPartA[ toCalculate ] = wiInputA[ g ];
-						F0InputPartA[ toCalculate ] = F0InputA[ g ];
-						omega0InputPartA[ toCalculate ] = omega0InputA[ g ];
-						++toCalculate;
-					}
-
-					if( toCalculate == 4 ||
-						(g == maxNumberOfImpulses * 4 - 1 && toCalculate > 0) )
-					{
-						typename M::Vector4F		xInputV = M::loadFromMemory( xInputPartA );
-						typename M::Vector4F		yInputV = M::loadFromMemory( yInputPartA );
-						typename M::Vector4F		kV = M::vectorizeOne( this->GetK() );
-						typename M::Vector4F		aV = M::vectorizeOne( this->GetA() );
-						typename M::Vector4F		F0V = M::loadFromMemory( F0InputPartA );
-						typename M::Vector4F		omega0V = M::loadFromMemory( omega0InputPartA );
-						typename M::Vector4F		wiV = M::loadFromMemory( wiInputPartA );
-
-						xInputV = M::multiply( xInputV, kernelRadiusV );
-						yInputV = M::multiply( yInputV, kernelRadiusV );
-
-						typename M::Vector4F		gaborV = gaborVectorized( kV, aV, F0V, omega0V, xInputV, yInputV );
-						gaborV = M::multiply( wiV, gaborV );
-
-						VECTOR4_ALIGN( ValueType	gaborResult[ 4 ] );
-						M::storeToMemory( gaborResult, gaborV );
-
-						for( int j = 0; j < toCalculate; ++j )
-						{
-							noise += gaborResult[ j ];
-						}
-
-						toCalculate = 0;
-					}
-				}*/
-
-				return noise;
+				return gaborV;
 			}
 
 			inline
