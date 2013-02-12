@@ -7,6 +7,9 @@
 #include <xmmintrin.h>
 
 
+#include <noise/math/Math.hpp>
+
+
 
 
 namespace noise
@@ -16,7 +19,7 @@ namespace noise
 	{
 
 		void
-		printVector( const __m128& v )
+		printVector( const math::Math< float >::Vector4F& v )
 		{
 			std::cout << "v = ";
 			std::cout << ((float*)&v)[ 0 ];
@@ -27,7 +30,18 @@ namespace noise
 		}
 
 		void
-		printVector( const __m128i& v )
+		printVector( const math::Math< double >::Vector4F& v )
+		{
+			std::cout << "v = ";
+			std::cout << ((double*)&v.lo)[ 0 ];
+			std::cout << ", " << ((double*)&v.lo)[ 1 ];
+			std::cout << ", " << ((double*)&v.hi)[ 0 ];
+			std::cout << ", " << ((double*)&v.hi)[ 1 ];
+			std::cout << std::endl;
+		}
+
+		void
+		printVector( const math::Math< float >::Vector4I& v )
 		{
 			std::cout << "v = ";
 			std::cout << ((unsigned int*)&v)[ 0 ];
@@ -38,7 +52,7 @@ namespace noise
 		}
 
 		void
-		printVectorBool( const __m128i& v )
+		printVectorBool( const math::Math< float >::Vector4I& v )
 		{
 			std::cout << "v = ";
 			std::cout << (((unsigned int*)&v)[ 0 ] == 0xffffffff ? 1 : 0);

@@ -16,7 +16,7 @@ namespace noise
 		class MathBase
 		{
 
-			public:
+		public:
 		
 			typedef ValueType	ScalarF;
 			typedef int32		ScalarI;
@@ -47,13 +47,13 @@ namespace noise
 			ValueType
 			MakeInt32Range( ValueType n )
 			{
-				if( n >= ValueType( 1073741824.0 ) )
+				if( n >= ScalarF( 1073741824.0 ) )
 				{
-					return (ValueType( 2.0 ) * fmod( n, ValueType( 1073741824.0 ) )) - ValueType( 1073741824.0 );
+					return (ScalarF( 2.0 ) * fmod( n, ScalarF( 1073741824.0 ) )) - ScalarF( 1073741824.0 );
 				}
 				else if( n <= ValueType( -1073741824.0 ) )
 				{
-					return (ValueType( 2.0 ) * fmod( n, ValueType( 1073741824.0 ) )) + ValueType( 1073741824.0 );
+					return (ScalarF( 2.0 ) * fmod( n, ScalarF( 1073741824.0 ) )) + ScalarF( 1073741824.0 );
 				}
 				else
 				{

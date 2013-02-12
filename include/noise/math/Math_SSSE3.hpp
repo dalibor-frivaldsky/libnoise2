@@ -28,6 +28,11 @@ namespace noise
 		{
 		};
 
+		template<>
+		class Math_SSSE3< double >: public Math_SSE3< double >
+		{
+		};
+
 	}
 
 }

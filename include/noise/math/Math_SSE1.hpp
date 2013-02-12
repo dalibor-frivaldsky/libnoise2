@@ -144,17 +144,11 @@ namespace noise
 
 			// Shuffle operations
 			template< uint8 First, uint8 Second, uint8 Third, uint8 Fourth >
-			struct Order
-			{
-				static const uint8		OrderValue = _MM_SHUFFLE( Fourth, Third, Second, First );
-			};
-
-			template< typename OrderPolicy >
 			static inline
 			Vector4F
 			shuffle( const Vector4F& a, const Vector4F& b )
 			{
-				return _mm_shuffle_ps( a, b, OrderPolicy::OrderValue );
+				return _mm_shuffle_ps( a, b, _MM_SHUFFLE( Fourth, Third, Second, First ) );
 			}
 
 
@@ -219,7 +213,7 @@ namespace noise
 
 				for( int i = 0; i < count; ++i )
 				{
-					shiftedV = shuffle< Order< 3, 0, 1, 2 > >( shiftedV, shiftedV );
+					shiftedV = shuffle< 3, 0, 1, 2 >( shiftedV, shiftedV );
 				}
 
 				return shiftedV;
@@ -233,7 +227,7 @@ namespace noise
 
 				for( int i = 0; i < count; ++i )
 				{
-					shiftedV = shuffle< Order< 1, 2, 3, 0 > >( shiftedV, shiftedV );
+					shiftedV = shuffle< 1, 2, 3, 0 >( shiftedV, shiftedV );
 				}
 
 				return shiftedV;
@@ -268,6 +262,54 @@ namespace noise
 			{
 				return _mm_shuffle_ps( input, input, _MM_SHUFFLE( 3, 3, 3, 3 ) );
 			}
+
+		};
+
+
+
+		template<>
+		class Math_SSE1< double >: public MathBase< double >
+		{
+
+		public:
+
+			// Memory operations
+			static inline void	loadFromMemory();
+			static inline void	storeToMemory();
+
+
+			// Vectorization
+			static inline void	vectorizeOne();
+			static inline void	vectorize();
+			
+
+			// Shuffle operations
+			static inline void	shuffle();
+
+
+			// Arithmetic operations
+			static inline void	multiply();
+			static inline void	divide();
+			static inline void	add();
+			static inline void	subtract();
+
+
+			// Comparison
+			static inline void	equal();
+			static inline void	greaterThan();
+			static inline void	lowerThan();
+
+
+			// Shift operations
+			static inline void	shiftRightLoop();
+			static inline void	shiftLeftLoop();
+
+
+			// Distribution operations
+			static inline void	distribute1st();
+			static inline void	distribute2nd();
+			static inline void	distribute3rd();
+			static inline void	distribute4th();
 
 		};
 

@@ -23,12 +23,16 @@ namespace noise
 
 
 
-		template<>
-		class Math_SSE2< float >: public Math_SSE1< float >
+		template< typename ValueType >
+		class Math_SSE2_Integer: public Math_SSE1< ValueType >
 		{
 
 		public:
 		
+			using typename Math_SSE1< ValueType >::ScalarF;
+			using typename Math_SSE1< ValueType >::ScalarI;
+			using typename Math_SSE1< ValueType >::ScalarUI;
+
 			typedef __m128i			Vector4I;
 
 
@@ -36,8 +40,8 @@ namespace noise
 		public:
 
 			// Memory operations
-			using Math_SSE1::loadFromMemory;
-			using Math_SSE1::storeToMemory;
+			using Math_SSE1< ValueType >::loadFromMemory;
+			using Math_SSE1< ValueType >::storeToMemory;
 
 			static inline
 			Vector4I
@@ -85,7 +89,7 @@ namespace noise
 			}
 
 			static inline
-			Vector4F
+			Vector4I
 			constOneI()
 			{
 				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, oneA, 1 );
@@ -93,7 +97,7 @@ namespace noise
 			}
 
 			static inline
-			Vector4F
+			Vector4I
 			constInvOneI()
 			{
 				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, oneA, ~1 );
@@ -101,7 +105,7 @@ namespace noise
 			}
 
 			static inline
-			Vector4F
+			Vector4I
 			constTwoI()
 			{
 				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, twoA, 2 );
@@ -109,7 +113,7 @@ namespace noise
 			}
 
 			static inline
-			Vector4F
+			Vector4I
 			constFourI()
 			{
 				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, fourA, 4 );
@@ -118,8 +122,8 @@ namespace noise
 
 
 			// Vectorization
-			using Math_SSE1::vectorizeOne;
-			using Math_SSE1::vectorize;
+			using Math_SSE1< ValueType >::vectorizeOne;
+			using Math_SSE1< ValueType >::vectorize;
 
 			static inline
 			Vector4I
@@ -157,53 +161,22 @@ namespace noise
 			}
 
 
-			// Conversions
-			static inline
-			Vector4I
-			floatToIntTruncated( const Vector4F& v )
-			{
-				return _mm_cvttps_epi32( v );
-			}
-		
-			static inline
-			Vector4F
-			intToFloat( const Vector4I& v )
-			{
-				return _mm_cvtepi32_ps( v );
-			}
-
-			// Casts
-			static inline
-			Vector4F
-			castToFloat( const Vector4I& v )
-			{
-				return _mm_castsi128_ps( v );
-			}
-
-			static inline
-			Vector4I
-			castToInt( const Vector4F& v )
-			{
-				return _mm_castps_si128( v );
-			}
-
-
 			// Shuffle operations
-			using Math_SSE1::shuffle;
+			using Math_SSE1< ValueType >::shuffle;
 
-			template< typename OrderPolicy >
+			template< uint8 First, uint8 Second, uint8 Third, uint8 Fourth >
 			static inline
 			Vector4I
 			shuffle( const Vector4I& v )
 			{
-				return _mm_shuffle_epi32( v, OrderPolicy::OrderValue );
+				return _mm_shuffle_epi32( v, _MM_SHUFFLE( Fourth, Third, Second, First ) );
 			}
 
 
 			// Arithmetic operations
-			using Math_SSE1::multiply;
-			using Math_SSE1::add;
-			using Math_SSE1::subtract;
+			using Math_SSE1< ValueType >::multiply;
+			using Math_SSE1< ValueType >::add;
+			using Math_SSE1< ValueType >::subtract;
 
 			static inline
 			Vector4I
@@ -231,8 +204,8 @@ namespace noise
 
 
 			// Comparison
-			using Math_SSE1::equal;
-			using Math_SSE1::greaterThan;
+			using Math_SSE1< ValueType >::equal;
+			using Math_SSE1< ValueType >::greaterThan;
 
 			static inline
 			bool
@@ -280,15 +253,8 @@ namespace noise
 
 
 			// Shift operations
-			using Math_SSE1::shiftRightLoop;
-			using Math_SSE1::shiftLeftLoop;
-
-			static inline
-			Vector4I
-			shiftRightLogical( const Vector4F& v, int bitCount )
-			{
-				return shiftRightLogical( castToInt( v ), bitCount );
-			}
+			using Math_SSE1< ValueType >::shiftRightLoop;
+			using Math_SSE1< ValueType >::shiftLeftLoop;
 
 			static inline
 			Vector4I
@@ -312,7 +278,7 @@ namespace noise
 
 				for( int i = 0; i < count; ++i )
 				{
-					shiftedV = shuffle< Order< 3, 0, 1, 2 > >( shiftedV );
+					shiftedV = shuffle< 3, 0, 1, 2 >( shiftedV );
 				}
 
 				return shiftedV;
@@ -326,11 +292,64 @@ namespace noise
 
 				for( int i = 0; i < count; ++i )
 				{
-					shiftedV = shuffle< Order< 1, 2, 3, 0 > >( shiftedV );
+					shiftedV = shuffle< 1, 2, 3, 0 >( shiftedV );
 				}
 
 				return shiftedV;
 			}
+
+		};
+
+
+
+		template<>
+		class Math_SSE2< float >: public Math_SSE2_Integer< float >
+		{
+
+		public:
+
+			// Conversions
+			static inline
+			Vector4I
+			floatToIntTruncated( const Vector4F& v )
+			{
+				return _mm_cvttps_epi32( v );
+			}
+		
+			static inline
+			Vector4F
+			intToFloat( const Vector4I& v )
+			{
+				return _mm_cvtepi32_ps( v );
+			}
+
+			// Casts
+			static inline
+			Vector4F
+			castToFloat( const Vector4I& v )
+			{
+				return _mm_castsi128_ps( v );
+			}
+
+			static inline
+			Vector4I
+			castToInt( const Vector4F& v )
+			{
+				return _mm_castps_si128( v );
+			}
+
+
+			// Shift operations
+			using Math_SSE2_Integer< float >::shiftRightLogical;
+
+			static inline
+			Vector4I
+			shiftRightLogical( const Vector4F& v, int bitCount )
+			{
+				return shiftRightLogical( _mm_castps_si128( v ), bitCount );
+			}
+
+			
 
 			// Misc operations
 			static inline
@@ -343,6 +362,13 @@ namespace noise
 				Vector4I	negBlendMask = bitXor( blendMask, negMask );
 				
 				return castToFloat( add( bPart, bitAnd( castToInt( a ), negBlendMask ) ) );
+			}
+
+			static inline
+			Vector4F
+			select( const Vector4F& v, const Vector4I& mask )
+			{
+				return castToFloat( bitAnd( castToInt( v ), mask ) );
 			}
 
 
@@ -630,6 +656,393 @@ namespace noise
 				/* update the sign */
 				sinV = _mm_xor_ps( xmm1, signBitSin );
 				cosV = _mm_xor_ps( xmm2, signBitCos );
+			}
+
+		};
+
+
+
+		template<>
+		class Math_SSE2< double >: public Math_SSE2_Integer< double >
+		{
+
+		public:
+		
+			typedef struct
+			{
+				__m128d	lo;
+				__m128d	hi;
+			}					Vector4F;
+
+
+
+		public:
+
+			// Memory operations
+			using Math_SSE2_Integer< double >::loadFromMemory;
+			using Math_SSE2_Integer< double >::storeToMemory;
+
+			static inline
+			Vector4F
+			loadFromMemory( const ScalarF* memoryLocation )
+			{
+				Vector4F	v;
+				v.lo = _mm_load_pd( memoryLocation );
+				v.hi = _mm_load_pd( memoryLocation + 2 );
+				return v;
+			}
+
+			static inline
+			void
+			storeToMemory( ScalarF* memoryLocation, const Vector4F& v )
+			{
+				_mm_store_pd( memoryLocation, v.lo );
+				_mm_store_pd( memoryLocation + 2, v.hi );
+			}
+
+
+			// Constants
+			static inline
+			Vector4F
+			constZeroF()
+			{
+				Vector4F	v;
+				v.lo = _mm_setzero_pd();
+				v.hi = _mm_setzero_pd();
+				return v;
+			}
+
+			static inline
+			Vector4F
+			constHalfF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, halfA, 0.5 );
+				return loadFromMemory( halfA );
+			}
+
+			static inline
+			Vector4F
+			constOneF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, oneA, 1.0 );
+				return loadFromMemory( oneA );
+			}
+
+			static inline
+			Vector4F
+			constMinusOneF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, minusOneA, -1.0 );
+				return loadFromMemory( minusOneA );
+			}
+
+			static inline
+			Vector4F
+			constTwoF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, twoA, 2.0 );
+				return loadFromMemory( twoA );
+			}
+
+			static inline
+			Vector4F
+			constPiF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, piA, 3.14159265358979323846 );
+				return loadFromMemory( piA );
+			}
+
+			static inline
+			Vector4F
+			constMinusPiF()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, minusPiA, -3.14159265358979323846 );
+				return loadFromMemory( minusPiA );
+			}
+
+
+			// Vectorization
+			using Math_SSE2_Integer< double >::vectorizeOne;
+			using Math_SSE2_Integer< double >::vectorize;
+
+			static inline
+			Vector4F
+			vectorizeOne( const ScalarF& f )
+			{
+				Vector4F	v;
+				v.lo = _mm_set1_pd( f );
+				v.hi = _mm_set1_pd( f );
+				return v;
+			}
+		
+			static inline
+			Vector4F
+			vectorize( const ScalarF& x, const ScalarF& y )
+			{
+				Vector4F	v;
+				v.lo = _mm_set_pd( y, x );
+				v.hi = _mm_setzero_pd();
+				return v;
+			}
+		
+			static inline
+			Vector4F
+			vectorize( const ScalarF& x, const ScalarF& y, const ScalarF& z )
+			{
+				Vector4F	v;
+				v.lo = _mm_set_pd( y, x );
+				v.hi = _mm_set_pd( 0.0, z );
+				return v;
+			}
+		
+			static inline
+			Vector4F
+			vectorize( const ScalarF& x, const ScalarF& y, const ScalarF& z, const ScalarF& w )
+			{
+				Vector4F	v;
+				v.lo = _mm_set_pd( y, x );
+				v.hi = _mm_set_pd( w, z );
+				return v;
+			}
+
+
+			// Shuffle operations
+			using Math_SSE2_Integer< double >::shuffle;
+
+			template< uint8 First, uint8 Second, uint8 Third, uint8 Fourth >
+			static inline
+			Vector4F
+			shuffle( const Vector4F& a, const Vector4F& b )
+			{
+				VECTOR4_ALIGN( ScalarF	tmp[ 8 ] );
+				storeToMemory( tmp, a );
+				storeToMemory( tmp + 4, b );
+
+				VECTOR4_ALIGN( ScalarF	res[ 4 ] );
+				res[ 0 ] = tmp[ First ];
+				res[ 1 ] = tmp[ Second ];
+				res[ 2 ] = tmp[ Third + 4 ];
+				res[ 3 ] = tmp[ Fourth + 4 ];
+
+				return loadFromMemory( res );
+			}
+
+
+			// Arithmetic operations
+			using Math_SSE2_Integer< double >::multiply;
+			using Math_SSE2_Integer< double >::add;
+			using Math_SSE2_Integer< double >::subtract;
+
+			static inline
+			Vector4F
+			multiply( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_mul_pd( l.lo, r.lo );
+				v.hi = _mm_mul_pd( l.hi, r.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			divide( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_div_pd( l.lo, r.lo );
+				v.hi = _mm_div_pd( l.hi, r.hi );
+				return v;
+			}
+		
+			static inline
+			Vector4F
+			add( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_add_pd( l.lo, r.lo );
+				v.hi = _mm_add_pd( l.hi, r.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			subtract( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_sub_pd( l.lo, r.lo );
+				v.hi = _mm_sub_pd( l.hi, r.hi );
+				return v;
+			}
+
+			// Comparison
+			using Math_SSE2_Integer< double >::equal;
+			using Math_SSE2_Integer< double >::greaterThan;
+
+			static inline
+			Vector4F
+			equal( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_cmpeq_pd( l.lo, r.lo );
+				v.hi = _mm_cmpeq_pd( l.hi, r.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			greaterThan( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_cmpgt_pd( l.lo, r.lo );
+				v.hi = _mm_cmpgt_pd( l.hi, r.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			lowerThan( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_cmplt_pd( l.lo, r.lo );
+				v.hi = _mm_cmplt_pd( l.hi, r.hi );
+				return v;
+			}
+
+
+			// Shift operations
+			using Math_SSE2_Integer< double >::shiftRightLoop;
+			using Math_SSE2_Integer< double >::shiftLeftLoop;
+
+			static inline
+			Vector4F
+			shiftRightLoop( const Vector4F& v, int count )
+			{
+				Vector4F	shiftedV = v;
+
+				for( int i = 0; i < count; ++i )
+				{
+					shiftedV = shuffle< 3, 0, 1, 2 >( shiftedV, shiftedV );
+				}
+
+				return shiftedV;
+			}
+
+			static inline
+			Vector4F
+			shiftLeftLoop( const Vector4F& v, int count )
+			{
+				Vector4F	shiftedV = v;
+
+				for( int i = 0; i < count; ++i )
+				{
+					shiftedV = shuffle< 1, 2, 3, 0 >( shiftedV, shiftedV );
+				}
+
+				return shiftedV;
+			}
+
+
+			// Distribution operations
+			static inline
+			Vector4F
+			distribute1st( const Vector4F& v )
+			{
+				Vector4F	v_;
+				v_.lo = _mm_shuffle_pd( v.lo, v.lo, _MM_SHUFFLE2( 0, 0 ) );
+				v_.hi = _mm_shuffle_pd( v.lo, v.lo, _MM_SHUFFLE2( 0, 0 ) );
+				return v_;
+			}
+
+			static inline
+			Vector4F
+			distribute2nd( const Vector4F& v )
+			{
+				Vector4F	v_;
+				v_.lo = _mm_shuffle_pd( v.lo, v.lo, _MM_SHUFFLE2( 1, 1 ) );
+				v_.hi = _mm_shuffle_pd( v.lo, v.lo, _MM_SHUFFLE2( 1, 1 ) );
+				return v_;
+			}
+
+			static inline
+			Vector4F
+			distribute3rd( const Vector4F& v )
+			{
+				Vector4F	v_;
+				v_.lo = _mm_shuffle_pd( v.hi, v.hi, _MM_SHUFFLE2( 0, 0 ) );
+				v_.hi = _mm_shuffle_pd( v.hi, v.hi, _MM_SHUFFLE2( 0, 0 ) );
+				return v_;
+			}
+
+			static inline
+			Vector4F
+			distribute4th( const Vector4F& v )
+			{
+				Vector4F	v_;
+				v_.lo = _mm_shuffle_pd( v.hi, v.hi, _MM_SHUFFLE2( 1, 1 ) );
+				v_.hi = _mm_shuffle_pd( v.hi, v.hi, _MM_SHUFFLE2( 1, 1 ) );
+				return v_;
+			}
+
+
+			// Conversions
+			static inline
+			Vector4I
+			floatToIntTruncated( const Vector4F& v )
+			{
+				Vector4I	tmp = _mm_cvttpd_epi32( v.hi );
+				tmp = shuffle< 2, 3, 0, 1 >( tmp );
+				tmp = add( tmp, _mm_cvttpd_epi32( v.lo ) );
+				return tmp;
+			}
+		
+			static inline
+			Vector4F
+			intToFloat( const Vector4I& v )
+			{
+				Vector4I	tmpI = v;
+				Vector4F	tmpF;
+				tmpF.lo = _mm_cvtepi32_pd( tmpI );
+				tmpF.hi = _mm_cvtepi32_pd( shuffle< 2, 3, 0, 1 >( tmpI ) );
+				return tmpF;
+			}
+
+
+			// Casts
+			/*static inline
+			Vector4F
+			castToFloat( const Vector4I& v )
+			{
+				return _mm_castsi128_ps( v );
+			}*/
+
+			static inline
+			Vector4I
+			castToInt( const Vector4F& v )
+			{
+				Vector4I	intLo = shuffle< 0, 2, 1, 3 >( _mm_castpd_si128( v.lo ) );
+				Vector4I	intHi = shuffle< 0, 2, 1, 3 >( _mm_castpd_si128( v.hi ) );
+				Vector4I	packed = _mm_unpacklo_epi32( intLo, intHi );
+				return shuffle< 0, 2, 1, 3 >( packed );
+			}
+
+
+			// Misc operations
+			static inline
+			Vector4F
+			blend( const Vector4F& a, const Vector4F& b, const Vector4I blendMask )
+			{
+				Vector4F	v;
+
+				Vector4I	loBlendMask = shuffle< 0, 0, 1, 1 >( blendMask );
+				Vector4I	loNegBlendMask = bitXor( loBlendMask, constFullMaskI() );
+				v.lo = bitAnd( _mm_castpd_si128( b.lo ), loBlendMask );
+				v.lo = _mm_castsi128_pd( add( v.lo, bitAnd( _mm_castpd_si128( a.lo ), loNegBlendMask ) ) );
+
+				Vector4I	hiBlendMask = shuffle< 2, 2, 3, 3 >( blendMask );
+				Vector4I	hiNegBlendMask = bitXor( hiBlendMask, constFullMaskI() );
+				v.hi = bitAnd( _mm_castpd_si128( b.hi ), hiBlendMask );
+				v.hi = _mm_castsi128_pd( add( v.hi, bitAnd( _mm_castpd_si128( a.hi ), hiNegBlendMask ) ) );
+
+				return v;
 			}
 
 		};

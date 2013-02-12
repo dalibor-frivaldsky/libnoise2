@@ -250,6 +250,7 @@ namespace noise
 								typename M::Vector4F& vPrev, const typename M::Vector4F& vNext, bool calculate )
 					{
 						typename M::Vector4F	compactV = M::blend( vPrev, vNext, compactMaskV );
+						//typename M::Vector4F	keepV = M::select( vNext, keepMaskV );
 						typename M::Vector4F	keepV = M::castToFloat( M::bitAnd( M::castToInt( vNext ), keepMaskV ) );
 
 						if( calculate == false )
