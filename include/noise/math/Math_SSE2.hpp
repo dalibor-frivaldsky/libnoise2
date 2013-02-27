@@ -34,6 +34,11 @@ namespace noise
 			using typename Math_SSE1< ValueType >::ScalarUI;
 
 			typedef __m128i			Vector4I;
+			typedef struct
+			{
+				__m128i		lo;
+				__m128i		hi;
+			}						Vector4I64;
 
 
 
@@ -71,6 +76,16 @@ namespace noise
 				_mm_store_si128( (Vector4I*) memoryLocation, v );
 			}
 
+			static inline
+			Vector4I64
+			loadFromMemory( const int64* memoryLocation )
+			{
+				Vector4I64	i64;
+				i64.lo = _mm_load_si128( (const __m128i*) memoryLocation );
+				i64.hi = _mm_load_si128( (const __m128i*) memoryLocation + 1 );
+				return i64;
+			}
+
 
 			// Constants
 			static inline
@@ -89,10 +104,29 @@ namespace noise
 			}
 
 			static inline
+			Vector4I64
+			constZeroI64()
+			{
+				Vector4I64	i64;
+				i64.lo = _mm_setzero_si128();
+				i64.hi = _mm_setzero_si128();
+				return i64;
+			}
+
+			static inline
 			Vector4I
 			constOneI()
 			{
 				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, oneA, 1 );
+				return loadFromMemory( oneA );
+			}
+
+			static inline
+			Vector4I64
+
+			constOneI64()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, oneA, 1 );
 				return loadFromMemory( oneA );
 			}
 
@@ -105,6 +139,14 @@ namespace noise
 			}
 
 			static inline
+			Vector4I64
+			constInvOneI64()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, oneA, ~1 );
+				return loadFromMemory( oneA );
+			}
+
+			static inline
 			Vector4I
 			constTwoI()
 			{
@@ -113,10 +155,27 @@ namespace noise
 			}
 
 			static inline
+			Vector4I64
+			constTwoI64()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, twoA, 2 );
+				return loadFromMemory( twoA );
+			}
+
+			static inline
 			Vector4I
 			constFourI()
 			{
 				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, fourA, 4 );
+				return loadFromMemory( fourA );
+			}
+
+			static inline
+			Vector4I64
+			constFourI64
+			()
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, fourA, 4 );
 				return loadFromMemory( fourA );
 			}
 
@@ -196,10 +255,31 @@ namespace noise
 			}
 
 			static inline
+			Vector4I64
+			add( const Vector4I64& l, const Vector4I64& r )
+			{
+				Vector4I64 i64;
+				i64.lo = _mm_add_epi64( l.lo, r.lo );
+				i64.hi = _mm_add_epi64( l.hi, r.hi );
+				return i64;
+			}
+
+			static inline
 			Vector4I
 			subtract( const Vector4I& l, const Vector4I& r )
 			{
 				return _mm_sub_epi32( l, r );
+			}
+
+			static inline
+			Vector4I64
+			subtract
+			( const Vector4I64& l, const Vector4I64& r )
+			{
+				Vector4I64 i64;
+				i64.lo = _mm_sub_epi64( l.lo, r.lo );
+				i64.hi = _mm_sub_epi64( l.hi, r.hi );
+				return i64;
 			}
 
 
@@ -222,6 +302,23 @@ namespace noise
 			}
 
 			static inline
+			Vector4I64
+			equal( const Vector4I64& l, const Vector4I64& r )
+			{
+				Vector4I64	i64;
+
+				__m128i		i1 = _mm_cmpeq_epi32( shuffle< 0, 0, 2, 2 >( l.lo ), shuffle< 0, 0, 2, 2 >( r.lo ) );
+				__m128i		i2 = _mm_cmpeq_epi32( shuffle< 1, 1, 3, 3 >( l.lo ), shuffle< 1, 1, 3, 3 >( r.lo ) );
+				i64.lo = _mm_and_si128( i1, i2 );
+				
+				i1 = _mm_cmpeq_epi32( shuffle< 0, 0, 2, 2 >( l.hi ), shuffle< 0, 0, 2, 2 >( r.hi ) );
+				i2 = _mm_cmpeq_epi32( shuffle< 1, 1, 3, 3 >( l.hi ), shuffle< 1, 1, 3, 3 >( r.hi ) );
+				i64.hi = _mm_and_si128( i1, i2 );
+
+				return i64;
+			}
+
+			static inline
 			Vector4I
 			greaterThan( const Vector4I& l, const Vector4I& r )
 			{
@@ -238,6 +335,16 @@ namespace noise
 			}
 
 			static inline
+			Vector4I64
+			bitAnd( const Vector4I64& l, const Vector4I64& r )
+			{
+				Vector4I64	i64;
+				i64.lo = _mm_and_si128( l.lo, r.lo );
+				i64.hi = _mm_and_si128( l.hi, r.hi );
+				return i64;
+			}
+
+			static inline
 			Vector4I
 			bitOr( const Vector4I& l, const Vector4I& r )
 			{
@@ -245,10 +352,47 @@ namespace noise
 			}
 
 			static inline
+			Vector4I64
+			bitOr( const Vector4I64& l, const Vector4I64& r )
+			{
+				Vector4I64	i64;
+				i64.lo = _mm_or_si128( l.lo, r.lo );
+				i64.hi = _mm_or_si128( l.hi, r.hi );
+				return i64;
+			}
+
+			static inline
 			Vector4I
 			bitXor( const Vector4I& l, const Vector4I& r )
 			{
 				return _mm_xor_si128( l, r );
+			}
+
+			static inline
+			Vector4I64
+			bitXor( const Vector4I64& l, const Vector4I64& r )
+			{
+				Vector4I64	i64;
+				i64.lo = _mm_xor_si128( l.lo, r.lo );
+				i64.hi = _mm_xor_si128( l.hi, r.hi );
+				return i64;
+			}
+
+			static inline
+			Vector4I
+			bitAndNot( const Vector4I& l, const Vector4I& r )
+			{
+				return _mm_andnot_si128( l, r );
+			}
+
+			static inline
+			Vector4I64
+			bitAndNot( const Vector4I64& l, const Vector4I64& r )
+			{
+				Vector4I64	i64;
+				i64.lo = _mm_andnot_si128( l.lo, r.lo );
+				i64.hi = _mm_andnot_si128( l.hi, r.hi );
+				return i64;
 			}
 
 
@@ -264,10 +408,30 @@ namespace noise
 			}
 
 			static inline
+			Vector4I64
+			shiftRightLogical( const Vector4I64& v, int bitCount )
+			{
+				Vector4I64	i64;
+				i64.lo = _mm_srli_epi64( v.lo, bitCount );
+				i64.hi = _mm_srli_epi64( v.hi, bitCount );
+				return i64;
+			}
+
+			static inline
 			Vector4I
 			shiftLeftLogical( const Vector4I& v, int bitCount )
 			{
 				return _mm_slli_epi32( v, bitCount );
+			}
+
+			static inline
+			Vector4I64
+			shiftLeftLogical( const Vector4I64& v, int bitCount )
+			{
+				Vector4I64	i64;
+				i64.lo = _mm_slli_epi64( v.lo, bitCount );
+				i64.hi = _mm_slli_epi64( v.hi, bitCount );
+				return i64;
 			}
 
 			static inline
@@ -296,6 +460,20 @@ namespace noise
 				}
 
 				return shiftedV;
+			}
+
+
+			// Misc
+			static inline
+			Vector4I
+			blend( const Vector4I& a, const Vector4I& b, const Vector4I& blendMask )
+			{
+				Vector4I	negMask = constFullMaskI();
+
+				Vector4I	bPart = bitAnd( b, blendMask );
+				Vector4I	negBlendMask = bitXor( blendMask, negMask );
+				
+				return add( bPart, bitAnd( a, negBlendMask ) );
 			}
 
 		};
@@ -352,6 +530,9 @@ namespace noise
 			
 
 			// Misc operations
+			using Math_SSE2_Integer< float >::blend;
+			using Math_SSE2_Integer< float >::floor;
+
 			static inline
 			Vector4F
 			blend( const Vector4F& a, const Vector4F& b, const Vector4I blendMask )
@@ -369,6 +550,17 @@ namespace noise
 			select( const Vector4F& v, const Vector4I& mask )
 			{
 				return castToFloat( bitAnd( castToInt( v ), mask ) );
+			}
+
+			static inline
+			Vector4F
+			floor( const Vector4F& v )
+			{
+				Vector4I	i = floatToIntTruncated( v );
+				Vector4F	tmp = intToFloat( i );
+				Vector4F	mask = greaterThan( tmp, v );    
+				mask = _mm_and_ps( mask, constOneF() );
+				return subtract( tmp, mask );
 			}
 
 
@@ -406,14 +598,7 @@ namespace noise
 				fx = _mm_mul_ps( x, loadFromMemory( cephes_log2ef ) );
 				fx = _mm_add_ps( fx, constHalfF() );
 
-				/* how to perform a floorf with SSE: just below */
-				emm0i = _mm_cvttps_epi32( fx );
-				tmp  = _mm_cvtepi32_ps( emm0i );
-
-				/* if greater, substract 1 */
-				Vector4F	mask = _mm_cmpgt_ps( tmp, fx );    
-				mask = _mm_and_ps( mask, one );
-				fx = _mm_sub_ps( tmp, mask );
+				fx = floor( fx );
 
 				tmp = _mm_mul_ps( fx, loadFromMemory( cephes_exp_C1 ) );
 				Vector4F	z = _mm_mul_ps( fx, loadFromMemory( cephes_exp_C2 ) );
@@ -453,7 +638,7 @@ namespace noise
 			Vector4F
 			cos( const Vector4F& v )
 			{
-				LIBNOISE2_SUPPORT_CONST_ARRAY( int, inv_sign_mask, ~0x80000000 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, inv_sign_mask, ~0x80000000 );
 				
 				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP1, -0.78515625f );
 				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP2, -2.4187564849853515625e-4f );
@@ -552,8 +737,8 @@ namespace noise
 			void
 			sinCos( const Vector4F& v, Vector4F& sinV, Vector4F& cosV )
 			{
-				LIBNOISE2_SUPPORT_CONST_ARRAY( int, sign_mask, 0x80000000 );
-				LIBNOISE2_SUPPORT_CONST_ARRAY( int, inv_sign_mask, ~0x80000000 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, sign_mask, 0x80000000 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, inv_sign_mask, ~0x80000000 );
 				
 				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP1, -0.78515625f );
 				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minus_cephes_DP2, -2.4187564849853515625e-4f );
@@ -908,6 +1093,75 @@ namespace noise
 			}
 
 
+			// MinMax
+			static inline
+			Vector4F
+			min( const Vector4F& a, const Vector4F& b )
+			{
+				Vector4F	v;
+				v.lo = _mm_min_pd( a.lo, b.lo );
+				v.hi = _mm_min_pd( a.hi, b.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			max( const Vector4F& a, const Vector4F& b )
+			{
+				Vector4F	v;
+				v.lo = _mm_max_pd( a.lo, b.lo );
+				v.hi = _mm_max_pd( a.hi, b.hi );
+				return v;
+			}
+
+
+			// Logical
+			using Math_SSE2_Integer< double >::bitAnd;
+			using Math_SSE2_Integer< double >::bitOr;
+			using Math_SSE2_Integer< double >::bitXor;
+			using Math_SSE2_Integer< double >::bitAndNot;
+
+			static inline
+			Vector4F
+			bitAnd( const Vector4F& a, const Vector4F& b )
+			{
+				Vector4F	v;
+				v.lo = _mm_and_pd( a.lo, b.lo );
+				v.hi = _mm_and_pd( a.hi, b.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			bitOr( const Vector4F& a, const Vector4F& b )
+			{
+				Vector4F	v;
+				v.lo = _mm_or_pd( a.lo, b.lo );
+				v.hi = _mm_or_pd( a.hi, b.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			bitXor( const Vector4F& a, const Vector4F& b )
+			{
+				Vector4F	v;
+				v.lo = _mm_xor_pd( a.lo, b.lo );
+				v.hi = _mm_xor_pd( a.hi, b.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			bitAndNot( const Vector4F& a, const Vector4F& b )
+			{
+				Vector4F	v;
+				v.lo = _mm_andnot_pd( a.lo, b.lo );
+				v.hi = _mm_andnot_pd( a.hi, b.hi );
+				return v;
+			}
+
+
 			// Shift operations
 			using Math_SSE2_Integer< double >::shiftRightLoop;
 			using Math_SSE2_Integer< double >::shiftLeftLoop;
@@ -988,31 +1242,55 @@ namespace noise
 			Vector4I
 			floatToIntTruncated( const Vector4F& v )
 			{
-				Vector4I	tmp = _mm_cvttpd_epi32( v.hi );
-				tmp = shuffle< 2, 3, 0, 1 >( tmp );
-				tmp = add( tmp, _mm_cvttpd_epi32( v.lo ) );
-				return tmp;
+				Vector4I	cvtLo = _mm_cvttpd_epi32( v.lo );
+				Vector4I	cvtHi = _mm_cvttpd_epi32( v.hi );
+				return add( cvtLo, shuffle< 2, 3, 0, 1 >( cvtHi ) );
+			}
+
+			static inline
+			Vector4I64
+			floatToInt64Truncated( const Vector4F& v )
+			{
+				Vector4I64	i64;
+				Vector4I	i32 = _mm_cvttpd_epi32( v.lo );
+				i64.lo = shuffle< 0, 2, 1, 3 >( i32 );
+				i32 = _mm_cvttpd_epi32( v.hi );
+				i64.hi = shuffle< 0, 2, 1, 3 >( i32 );
+
+				return i64;
 			}
 		
 			static inline
 			Vector4F
 			intToFloat( const Vector4I& v )
 			{
-				Vector4I	tmpI = v;
-				Vector4F	tmpF;
-				tmpF.lo = _mm_cvtepi32_pd( tmpI );
-				tmpF.hi = _mm_cvtepi32_pd( shuffle< 2, 3, 0, 1 >( tmpI ) );
-				return tmpF;
+				Vector4F	f;
+				f.lo = _mm_cvtepi32_pd( v );
+				f.hi = _mm_cvtepi32_pd( shuffle< 2, 3, 0, 1 >( v ) );
+				return f;
+			}
+
+			static inline
+			Vector4F
+			int64ToFloat( const Vector4I64& i64 )
+			{
+				Vector4F	v;
+				v.lo = _mm_cvtepi32_pd( shuffle< 0, 2, 1, 3 >( i64.lo ) );
+				v.hi = _mm_cvtepi32_pd( shuffle< 0, 2, 1, 3 >( i64.hi ) );
+				return v;
 			}
 
 
 			// Casts
-			/*static inline
+			static inline
 			Vector4F
-			castToFloat( const Vector4I& v )
+			castToFloat( const Vector4I64& i64 )
 			{
-				return _mm_castsi128_ps( v );
-			}*/
+				Vector4F	v;
+				v.lo = _mm_castsi128_pd( i64.lo );
+				v.hi = _mm_castsi128_pd( i64.hi );
+				return v;
+			}
 
 			static inline
 			Vector4I
@@ -1026,6 +1304,9 @@ namespace noise
 
 
 			// Misc operations
+			using Math_SSE2_Integer< double >::blend;
+			using Math_SSE2_Integer< double >::floor;
+
 			static inline
 			Vector4F
 			blend( const Vector4F& a, const Vector4F& b, const Vector4I blendMask )
@@ -1043,6 +1324,321 @@ namespace noise
 				v.hi = _mm_castsi128_pd( add( v.hi, bitAnd( _mm_castpd_si128( a.hi ), hiNegBlendMask ) ) );
 
 				return v;
+			}
+
+			static inline
+			Vector4F
+			select( const Vector4F& v, const Vector4I& mask )
+			{
+				Vector4I	loMask = shuffle< 0, 0, 1, 1 >( mask );
+				Vector4I	hiMask = shuffle< 2, 2, 3, 3 >( mask );
+
+				Vector4F	selected;
+				selected.lo = _mm_castsi128_pd( bitAnd( _mm_castpd_si128( v.lo ), loMask ) );
+				selected.hi = _mm_castsi128_pd( bitAnd( _mm_castpd_si128( v.hi ), hiMask ) );
+				return selected;
+			}
+
+			static inline
+			Vector4F
+			floor( const Vector4F& v )
+			{
+				Vector4I	i = floatToIntTruncated( v );
+				Vector4F	tmp = intToFloat( i );
+				Vector4F	mask = greaterThan( tmp, v );    
+				mask.lo = _mm_and_ps( mask.lo, constOneF().lo );
+				mask.hi = _mm_and_ps( mask.hi, constOneF().hi );
+				return subtract( tmp, mask );
+			}
+
+
+			// Exponential
+			// TODO practically copied from single precision exp. Cephes implementation for double
+			// seems to be different
+			static inline
+			Vector4F
+			exp( const Vector4F& v )
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, exp_hi, 88.3762626647949 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, exp_lo, -88.3762626647949 );
+				
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_log2ef, 1.44269504088896341 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_exp_C1, 0.693359375 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_exp_C2, -2.12194440e-4 );
+				
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_exp_p0, 1.9875691500E-4 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_exp_p1, 1.3981999507E-3 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_exp_p2, 8.3334519073E-3 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_exp_p3, 4.1665795894E-2 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_exp_p4, 1.6666665459E-1 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_exp_p5, 5.0000001201E-1 );
+
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, i1023, 0x3ff );
+				
+				Vector4F	x = v;
+				Vector4F	tmp = constZeroF();
+				Vector4F	fx;
+				Vector4I	emm0i;
+				__m128i		emm0iLo;
+				__m128i		emm0iHi;
+				Vector4F	one = constOneF();
+
+				x = min( x, loadFromMemory( exp_hi ) );
+				x = max( x, loadFromMemory( exp_lo ) );
+
+				/* express exp(x) as exp(g + n*log(2)) */
+				fx = multiply( x, loadFromMemory( cephes_log2ef ) );
+				fx = add( fx, constHalfF() );
+
+				/* how to perform a floorf with SSE: just below */
+				fx = floor( fx );
+
+				tmp = multiply( fx, loadFromMemory( cephes_exp_C1 ) );
+				Vector4F	z = multiply( fx, loadFromMemory( cephes_exp_C2 ) );
+				x = subtract( x, tmp );
+				x = subtract( x, z );
+
+				z = multiply( x, x );
+
+				Vector4F	y = loadFromMemory( cephes_exp_p0 );
+				y = multiply( y, x );
+				y = add( y, loadFromMemory( cephes_exp_p1 ) );
+				y = multiply( y, x );
+				y = add( y, loadFromMemory( cephes_exp_p2 ) );
+				y = multiply( y, x );
+				y = add( y, loadFromMemory( cephes_exp_p3 ) );
+				y = multiply( y, x );
+				y = add( y, loadFromMemory( cephes_exp_p4 ) );
+				y = multiply( y, x );
+				y = add( y, loadFromMemory( cephes_exp_p5 ) );
+				y = multiply( y, z );
+				y = add( y, x );
+				y = add( y, one );
+
+				/* build 2^n */
+				Vector4F	pow2n;
+				emm0iLo = shuffle< 0, 2, 1, 3 >( _mm_cvttpd_epi32( fx.lo ) );
+				emm0iLo = _mm_add_epi64( emm0iLo, _mm_load_si128( (__m128i*) i1023 ) );
+				emm0iLo = _mm_slli_epi64( emm0iLo, 52 );
+				pow2n.lo = _mm_castsi128_pd( emm0iLo );
+				emm0iHi = shuffle< 0, 2, 1, 3 >( _mm_cvttpd_epi32( fx.hi ) );
+				emm0iHi = _mm_add_epi64( emm0iHi, _mm_load_si128( (__m128i*) (i1023 + 2) ) );
+				emm0iHi = _mm_slli_epi64( emm0iHi, 52 );
+				pow2n.hi = _mm_castsi128_pd( emm0iHi );
+				y = multiply( y, pow2n );
+
+				return y;
+			}
+
+
+			// Trigonometric
+			static inline
+			Vector4F
+			cos( const Vector4F& v )
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, inv_sign_mask, ~0x8000000000000000 );
+				
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, minus_cephes_DP1, -0.78515625 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, minus_cephes_DP2, -2.4187564849853515625e-4 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, minus_cephes_DP3, -3.77489497744594108e-8 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, sincof_p0, -1.9515295891E-4 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, sincof_p1, 8.3321608736E-3 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, sincof_p2, -1.6666654611E-1 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, coscof_p0, 2.443315711809948E-005 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, coscof_p1, -1.388731625493765E-003 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, coscof_p2, 4.166664568298827E-002 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_FOPI, 1.27323954473516 );
+				
+				Vector4F	x = v;
+				Vector4F	xmm1;
+				Vector4F	xmm2 = constZeroF();
+				Vector4F	xmm3;
+				Vector4F	y;
+				Vector4I64	emm0;
+				Vector4I64	emm2;
+
+				/* take the absolute value */
+				x = bitAnd( x, loadFromMemory( (ScalarF*) inv_sign_mask ) );
+				
+				/* scale by 4/Pi */
+				y = multiply( x, loadFromMemory( cephes_FOPI ) );
+				
+				/* store the integer part of y in mm0 */
+				emm2 = floatToInt64Truncated( y );
+				/* j=(j+1) & (~1) (see the cephes sources) */
+				emm2 = add( emm2, constOneI64() );
+				emm2 = bitAnd( emm2, constInvOneI64() );
+				y = int64ToFloat( emm2 );
+				
+				emm2 = subtract( emm2, constTwoI64() );
+
+				/* get the swap sign flag */
+				emm0 = bitAndNot( emm2, constFourI64() );
+				emm0 = shiftLeftLogical( emm0, 61 );
+
+				/* get the polynom selection mask */
+				emm2 = bitAnd( emm2, constTwoI64() );
+				emm2 = equal( emm2, constZeroI64() );
+
+				Vector4F	signBit = castToFloat( emm0 );
+				Vector4F	polyMask = castToFloat( emm2 );
+
+				/* The magic pass: "Extended precision modular arithmetic" 
+				x = ((x - y * DP1) - y * DP2) - y * DP3; */
+				xmm1 = loadFromMemory( minus_cephes_DP1 );
+				xmm2 = loadFromMemory( minus_cephes_DP2 );
+				xmm3 = loadFromMemory( minus_cephes_DP3 );
+				xmm1 = multiply( y, xmm1 );
+				xmm2 = multiply( y, xmm2 );
+				xmm3 = multiply( y, xmm3 );
+				x = add( x, xmm1 );
+				x = add( x, xmm2 );
+				x = add( x, xmm3 );
+
+				/* Evaluate the first polynom  (0 <= x <= Pi/4) */
+				Vector4F	z = multiply( x, x );
+				y = loadFromMemory( coscof_p0 );
+
+				y = multiply( y, z );
+				y = add( y, loadFromMemory( coscof_p1 ) );
+				y = multiply( y, z );
+				y = add( y, loadFromMemory( coscof_p2 ) );
+				y = multiply( y, z );
+				y = multiply( y, z );
+				Vector4F	tmp = multiply( z, constHalfF() );
+				y = subtract( y, tmp );
+				y = add( y, constOneF() );
+
+				/* Evaluate the second polynom  (Pi/4 <= x <= 0) */
+
+				Vector4F	y2 = loadFromMemory( sincof_p0 );
+				y2 = multiply( y2, z );
+				y2 = add( y2, loadFromMemory( sincof_p1 ) );
+				y2 = multiply( y2, z );
+				y2 = add( y2, loadFromMemory( sincof_p2 ) );
+				y2 = multiply( y2, z );
+				y2 = multiply( y2, x );
+				y2 = add( y2, x );
+
+				/* select the correct result from the two polynoms */  
+				xmm3 = polyMask;
+				y2 = bitAnd( xmm3, y2 ); //, xmm3);
+				y = bitAndNot( xmm3, y );
+				y = add( y, y2 );
+				/* update the sign */
+				y = bitXor( y, signBit );
+
+				return y;
+			}
+
+			static inline
+			void
+			sinCos( const Vector4F& v, Vector4F& sinV, Vector4F& cosV )
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, sign_mask, 0x8000000000000000 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, inv_sign_mask, ~0x8000000000000000 );
+				
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, minus_cephes_DP1, -0.78515625 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, minus_cephes_DP2, -2.4187564849853515625e-4 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, minus_cephes_DP3, -3.77489497744594108e-8 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, sincof_p0, -1.9515295891E-4 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, sincof_p1, 8.3321608736E-3 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, sincof_p2, -1.6666654611E-1 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, coscof_p0, 2.443315711809948E-005 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, coscof_p1, -1.388731625493765E-003 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, coscof_p2, 4.166664568298827E-002 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, cephes_FOPI, 1.27323954473516 );
+
+				Vector4F	x = v;
+				Vector4F	xmm1;
+				Vector4F	xmm2;
+				Vector4F	xmm3 = constZeroF();
+				Vector4F	signBitSin;
+				Vector4F	y;
+				Vector4I64	emm0;
+				Vector4I64	emm2;
+				Vector4I64	emm4;
+
+				signBitSin = x;
+				x = bitAnd( x, loadFromMemory( (ScalarF*) inv_sign_mask ) );
+				signBitSin = bitAnd( signBitSin, loadFromMemory( (ScalarF*) sign_mask ) );
+
+				y = multiply( x, loadFromMemory( cephes_FOPI ) );
+
+				emm2 = floatToInt64Truncated( y );
+
+				emm2 = add( emm2, constOneI64() );
+				emm2 = bitAnd( emm2, constInvOneI64() );
+				y = int64ToFloat( emm2 );
+
+				emm4 = emm2;
+
+				/* get the swap sign flag for the sseSin */
+				emm0 = bitAnd( emm2, constFourI64() );
+				emm0 = shiftLeftLogical( emm0, 61 );
+				Vector4F	swapSignBitSin = castToFloat( emm0 );
+
+				/* get the polynom selection mask for the sseSin*/
+				emm2 = bitAnd( emm2, constTwoI64() );
+				emm2 = equal( emm2, constZeroI64() );
+				Vector4F	polyMask = castToFloat( emm2 );
+
+				/* The magic pass: "Extended precision modular arithmetic" 
+		 		   x = ((x - y * DP1) - y * DP2) - y * DP3; */
+				xmm1 = loadFromMemory( minus_cephes_DP1 );
+				xmm2 = loadFromMemory( minus_cephes_DP2 );
+				xmm3 = loadFromMemory( minus_cephes_DP3 );
+				xmm1 = multiply( y, xmm1 );
+				xmm2 = multiply( y, xmm2 );
+				xmm3 = multiply( y, xmm3 );
+				x = add( x, xmm1 );
+				x = add( x, xmm2 );
+				x = add( x, xmm3 );
+
+				emm4 = subtract( emm4, constTwoI64() );
+				emm4 = bitAndNot( emm4, constFourI64() );
+				emm4 = shiftLeftLogical( emm4, 61 );
+				Vector4F	signBitCos = castToFloat( emm4 );
+
+				signBitSin = bitXor( signBitSin, swapSignBitSin );
+
+				/* Evaluate the first polynom  (0 <= x <= Pi/4) */
+				Vector4F	z = multiply( x, x );
+				y = loadFromMemory( coscof_p0 );
+
+				y = multiply( y, z );
+				y = add( y, loadFromMemory( coscof_p1 ) );
+				y = multiply( y, z );
+				y = add( y, loadFromMemory( coscof_p2 ) );
+				y = multiply( y, z );
+				y = multiply( y, z );
+				Vector4F	tmp = multiply( z, constHalfF() );
+				y = subtract( y, tmp );
+				y = add( y, constOneF() );
+
+				/* Evaluate the second polynom  (Pi/4 <= x <= 0) */
+				Vector4F	y2 = loadFromMemory( sincof_p0 );
+				y2 = multiply( y2, z );
+				y2 = add( y2, loadFromMemory( sincof_p1 ) );
+				y2 = multiply( y2, z );
+				y2 = add( y2, loadFromMemory( sincof_p2 ) );
+				y2 = multiply( y2, z );
+				y2 = multiply( y2, x );
+				y2 = add( y2, x );
+
+				/* select the correct result from the two polynoms */  
+				xmm3 = polyMask;
+				Vector4F	ysin2 = bitAnd( xmm3, y2 );
+				Vector4F	ysin1 = bitAndNot( xmm3, y );
+				y2 = subtract( y2, ysin2 );
+				y = subtract( y, ysin1 );
+
+				xmm1 = add( ysin1, ysin2 );
+				xmm2 = add( y, y2 );
+
+				/* update the sign */
+				sinV = bitXor( xmm1, signBitSin );
+				cosV = bitXor( xmm2, signBitCos );
 			}
 
 		};

@@ -250,9 +250,8 @@ namespace noise
 								typename M::Vector4F& vPrev, const typename M::Vector4F& vNext, bool calculate )
 					{
 						typename M::Vector4F	compactV = M::blend( vPrev, vNext, compactMaskV );
-						//typename M::Vector4F	keepV = M::select( vNext, keepMaskV );
-						typename M::Vector4F	keepV = M::castToFloat( M::bitAnd( M::castToInt( vNext ), keepMaskV ) );
-
+						typename M::Vector4F	keepV = M::select( vNext, keepMaskV );
+						
 						if( calculate == false )
 						{
 							vPrev = compactV;
@@ -347,7 +346,7 @@ namespace noise
 
 					typename M::Vector4F	gaborV = gaborVectorized( kV, aV, F0V, omega0V, xV, yV );
 					gaborV = M::multiply( wiV, gaborV );
-					gaborV = M::castToFloat( M::bitAnd( M::castToInt( gaborV ), calcMaskV ) );
+					gaborV = M::select( gaborV, calcMaskV );
 
 					return gaborV;
 				}
@@ -427,7 +426,7 @@ namespace noise
 					typename M::Vector4F		xCosOmega = M::multiply( xV, cosOmega );
 					typename M::Vector4F		ySinOmega = M::multiply( yV, sinOmega );
 					typename M::Vector4F		xCosYSin = M::add( xCosOmega, ySinOmega );
-
+					
 					typename M::Vector4F		sinusoidalCarrier = M::multiply( M::constTwoF(), piV );
 					sinusoidalCarrier = M::multiply( sinusoidalCarrier, f0V );
 					sinusoidalCarrier = M::multiply( sinusoidalCarrier, xCosYSin );

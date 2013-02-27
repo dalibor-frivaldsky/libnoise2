@@ -18,6 +18,9 @@ namespace noise
 	/// 8-bit unsigned integer type.
 	typedef unsigned char uint8;
 
+	/// 64-bit signed integer type.
+	typedef long long int64;
+
 	/// 32-bit signed integer type.
 	typedef int int32;
 

@@ -5,6 +5,7 @@
 #include <cmath>
 
 
+#include <noise/debug/Debug.hpp>
 #include <noise/math/Math.hpp>
 
 
