@@ -142,6 +142,19 @@ namespace noise
 			}
 
 
+			// Extraction
+			static inline
+			ScalarF
+			extract1st( const Vector4F& v )
+			{
+				ScalarF	ret;
+				
+				_mm_store_ss( &ret, v );
+
+				return ret;
+			}
+
+
 			// Shuffle operations
 			template< uint8 First, uint8 Second, uint8 Third, uint8 Fourth >
 			static inline
@@ -149,6 +162,14 @@ namespace noise
 			shuffle( const Vector4F& a, const Vector4F& b )
 			{
 				return _mm_shuffle_ps( a, b, _MM_SHUFFLE( Fourth, Third, Second, First ) );
+			}
+
+			template< typename OrderPolicy >
+			static inline
+			Vector4F
+			shuffle( const Vector4F& a, const Vector4F& b )
+			{
+				return _mm_shuffle_ps( a, b, _MM_SHUFFLE( OrderPolicy::o4, OrderPolicy::o3, OrderPolicy::o2, OrderPolicy::o1 ) );
 			}
 
 

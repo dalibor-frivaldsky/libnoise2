@@ -16,6 +16,39 @@ namespace noise
 		class DimensionAdapter;
 
 		template< typename ValueT, typename AdaptedT >
+		class DimensionAdapter< ValueT, 2, AdaptedT, 1 >: public Module< ValueT, 2 >, private AdaptedT
+		{
+
+		public:
+
+			typedef ValueT								ValueType;
+			typedef AdaptedT							AdaptedType;
+			static const unsigned						Dimension = 2;
+			typedef Module< ValueType, Dimension >		ModuleType;
+			typedef DimensionAdapter< ValueType, Dimension, AdaptedType, 1 >		ThisType;
+
+
+
+		public:
+
+			DimensionAdapter():
+			  ModuleType( 0 )
+			{}
+
+			virtual
+			~DimensionAdapter()
+			{}
+
+			virtual
+			ValueType
+			GetValue( ValueType x, ValueType y ) const
+			{
+				return AdaptedType::GetValue( x );
+			}
+
+		};
+
+		template< typename ValueT, typename AdaptedT >
 		class DimensionAdapter< ValueT, 2, AdaptedT, 3 >: public Module< ValueT, 2 >, private AdaptedT
 		{
 

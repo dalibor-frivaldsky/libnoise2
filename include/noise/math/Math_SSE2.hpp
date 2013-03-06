@@ -563,6 +563,13 @@ namespace noise
 				return subtract( tmp, mask );
 			}
 
+			static inline
+			Vector4I
+			signToOne( const Vector4F& v )
+			{
+				return shiftRightLogical( v, 31 );
+			}
+
 
 			// Exponential
 			static inline
@@ -991,6 +998,19 @@ namespace noise
 			}
 
 
+			// Extraction
+			static inline
+			ScalarF
+			extract1st( const Vector4F& v )
+			{
+				ScalarF	ret;
+				
+				_mm_store_sd( &ret, v.lo );
+
+				return ret;
+			}
+
+
 			// Shuffle operations
 			using Math_SSE2_Integer< double >::shuffle;
 
@@ -1008,6 +1028,24 @@ namespace noise
 				res[ 1 ] = tmp[ Second ];
 				res[ 2 ] = tmp[ Third + 4 ];
 				res[ 3 ] = tmp[ Fourth + 4 ];
+
+				return loadFromMemory( res );
+			}
+
+			template< typename OrderPolicy >
+			static inline
+			Vector4F
+			shuffle( const Vector4F& a, const Vector4F& b )
+			{
+				VECTOR4_ALIGN( ScalarF	tmp[ 8 ] );
+				storeToMemory( tmp, a );
+				storeToMemory( tmp + 4, b );
+
+				VECTOR4_ALIGN( ScalarF	res[ 4 ] );
+				res[ 0 ] = tmp[ OrderPolicy::o1 ];
+				res[ 1 ] = tmp[ OrderPolicy::o2 ];
+				res[ 2 ] = tmp[ OrderPolicy::o3 + 4 ];
+				res[ 3 ] = tmp[ OrderPolicy::o4 + 4 ];
 
 				return loadFromMemory( res );
 			}
@@ -1349,6 +1387,19 @@ namespace noise
 				mask.lo = _mm_and_pd( mask.lo, constOneF().lo );
 				mask.hi = _mm_and_pd( mask.hi, constOneF().hi );
 				return subtract( tmp, mask );
+			}
+
+			static inline
+			Vector4I
+			signToOne( const Vector4F& v )
+			{
+				Vector4I	signLo = _mm_srli_epi64( _mm_castpd_si128( v.lo ), 63 );
+				signLo = shuffle< 0, 2, 1, 3 >( signLo );
+
+				Vector4I	signHi = _mm_srli_epi64( _mm_castpd_si128( v.hi ), 63 );
+				signHi = shuffle< 1, 3, 0, 2 >( signHi );
+
+				return add( signLo, signHi );
 			}
 
 

@@ -1,6 +1,9 @@
 #pragma once
 
 
+#include <cmath>
+
+
 #include <noise/BasicTypes.hpp>
 
 
@@ -49,17 +52,30 @@ namespace noise
 			{
 				if( n >= ScalarF( 1073741824.0 ) )
 				{
-					return (ScalarF( 2.0 ) * fmod( n, ScalarF( 1073741824.0 ) )) - ScalarF( 1073741824.0 );
+					return (ScalarF( 2.0 ) * std::fmod( n, ScalarF( 1073741824.0 ) )) - ScalarF( 1073741824.0 );
 				}
 				else if( n <= ValueType( -1073741824.0 ) )
 				{
-					return (ScalarF( 2.0 ) * fmod( n, ScalarF( 1073741824.0 ) )) + ScalarF( 1073741824.0 );
+					return (ScalarF( 2.0 ) * std::fmod( n, ScalarF( 1073741824.0 ) )) + ScalarF( 1073741824.0 );
 				}
 				else
 				{
 					return n;
 				}
 			}
+
+			// Order
+			template< uint8 _1, uint8 _2, uint8 _3, uint8 _4 >
+			struct Order
+			{
+				enum
+				{
+					o1 = _1,
+					o2 = _2,
+					o3 = _3,
+					o4 = _4
+				};
+			};
 	
 		};
 

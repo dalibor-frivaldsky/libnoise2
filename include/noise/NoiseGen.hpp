@@ -82,8 +82,12 @@ namespace noise
 	
 	#include "noise/NoiseGen_1.hpp"
 
-	#if defined( LIBNOISE2_USE_SSE )
+	#if defined( LIBNOISE2_AT_LEAST_SSE2 )
+	#include "noise/NoiseGen_2F_SSE_2.hpp"
+	#include "noise/NoiseGen_3F_SSE_2.hpp"
+	#include "noise/NoiseGen_4F_SSE_2.hpp"
 
+	#elif defined( LIBNOISE2_USE_SSE )
 	#if defined( LIBNOISE2_USE_SSE_2 )
 	#include "noise/NoiseGen_2F_SSE_2.hpp"
 	#include "noise/NoiseGen_3F_SSE_2.hpp"
