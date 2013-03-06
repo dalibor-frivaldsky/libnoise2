@@ -660,7 +660,7 @@ namespace noise
 				Vector4I	emm2;
 
 				/* take the absolute value */
-				x = _mm_and_ps( x, loadFromMemory( (ScalarI*) inv_sign_mask ) );
+				x = _mm_and_ps( x, castToFloat( loadFromMemory( (ScalarI*) inv_sign_mask ) ) );
 				
 				/* scale by 4/Pi */
 				y = _mm_mul_ps( x, loadFromMemory( cephes_FOPI ) );
@@ -762,8 +762,8 @@ namespace noise
 				Vector4I	emm4;
 
 				signBitSin = x;
-				x = _mm_and_ps( x, loadFromMemory( (ScalarI*) inv_sign_mask ) );
-				signBitSin = _mm_and_ps( signBitSin, loadFromMemory( (ScalarI*) sign_mask ) );
+				x = _mm_and_ps( x, castToFloat( loadFromMemory( (ScalarI*) inv_sign_mask ) ) );
+				signBitSin = _mm_and_ps( signBitSin, castToFloat( loadFromMemory( (ScalarI*) sign_mask ) ) );
 
 				y = _mm_mul_ps( x, loadFromMemory( cephes_FOPI ) );
 
@@ -1315,13 +1315,13 @@ namespace noise
 
 				Vector4I	loBlendMask = shuffle< 0, 0, 1, 1 >( blendMask );
 				Vector4I	loNegBlendMask = bitXor( loBlendMask, constFullMaskI() );
-				v.lo = bitAnd( _mm_castpd_si128( b.lo ), loBlendMask );
-				v.lo = _mm_castsi128_pd( add( v.lo, bitAnd( _mm_castpd_si128( a.lo ), loNegBlendMask ) ) );
+				v.lo = _mm_castsi128_pd( bitAnd( _mm_castpd_si128( b.lo ), loBlendMask ) );
+				v.lo = _mm_castsi128_pd( add( _mm_castpd_si128( v.lo ), bitAnd( _mm_castpd_si128( a.lo ), loNegBlendMask ) ) );
 
 				Vector4I	hiBlendMask = shuffle< 2, 2, 3, 3 >( blendMask );
 				Vector4I	hiNegBlendMask = bitXor( hiBlendMask, constFullMaskI() );
-				v.hi = bitAnd( _mm_castpd_si128( b.hi ), hiBlendMask );
-				v.hi = _mm_castsi128_pd( add( v.hi, bitAnd( _mm_castpd_si128( a.hi ), hiNegBlendMask ) ) );
+				v.hi = _mm_castsi128_pd( bitAnd( _mm_castpd_si128( b.hi ), hiBlendMask ) );
+				v.hi = _mm_castsi128_pd( add( _mm_castpd_si128( v.hi ), bitAnd( _mm_castpd_si128( a.hi ), hiNegBlendMask ) ) );
 
 				return v;
 			}
@@ -1346,8 +1346,8 @@ namespace noise
 				Vector4I	i = floatToIntTruncated( v );
 				Vector4F	tmp = intToFloat( i );
 				Vector4F	mask = greaterThan( tmp, v );    
-				mask.lo = _mm_and_ps( mask.lo, constOneF().lo );
-				mask.hi = _mm_and_ps( mask.hi, constOneF().hi );
+				mask.lo = _mm_and_pd( mask.lo, constOneF().lo );
+				mask.hi = _mm_and_pd( mask.hi, constOneF().hi );
 				return subtract( tmp, mask );
 			}
 
