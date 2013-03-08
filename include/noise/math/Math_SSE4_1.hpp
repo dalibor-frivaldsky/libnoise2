@@ -47,7 +47,7 @@ namespace noise
 			Vector4F
 			blend( const Vector4F& a, const Vector4F& b, const Vector4I blendMask )
 			{
-				return _mm_blendv_ps( a, b, blendMask );
+				return _mm_blendv_ps( a, b, _mm_castsi128_ps( blendMask ) );
 			}
 
 		};

@@ -491,7 +491,7 @@ namespace noise
 					n2 = M::multiply( n2, gradient );
 
 					typename M::Vector4F		nd1 = M::reduce( n1, n2 );
-
+					
 					n1 = M::template shuffle< typename ShufflePolicy::Shuffle_10 >( x0y0x1y1, z0w0z1w1 );
 					n1 = M::subtract( coordV, n1 );
 					tableIndex = indexBase + Z_NOISE_GEN * iz1 + W_NOISE_GEN * iw0;

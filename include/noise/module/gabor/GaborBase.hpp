@@ -2,7 +2,7 @@
 
 
 // libnoise2
-#include <noise/Math.hpp>
+#include <noise/math/Math.hpp>
 
 
 
@@ -57,7 +57,7 @@ namespace noise
 				float
 				omega0()
 				{
-					return Math< float >::Pi() / 4.0f;
+					return math::Math< float >::Pi() / 4.0f;
 				}
 
 				static
@@ -128,7 +128,7 @@ namespace noise
 				double
 				omega0()
 				{
-					return Math< double >::Pi() / 4.0;
+					return math::Math< double >::Pi() / 4.0;
 				}
 
 				static
@@ -400,8 +400,8 @@ namespace noise
 				void
 				recalculateKernelProperties()
 				{
-					kernelRadius = std::sqrt( -std::log( ValueType( 0.05 ) ) / Math< ValueType >::Pi() ) / a;
-					impulseDensity = numberOfImpulses / (Math< ValueType >::Pi() * kernelRadius * kernelRadius);
+					kernelRadius = std::sqrt( -std::log( ValueType( 0.05 ) ) / math::Math< ValueType >::Pi() ) / a;
+					impulseDensity = numberOfImpulses / (math::Math< ValueType >::Pi() * kernelRadius * kernelRadius);
 				}
 
 				void

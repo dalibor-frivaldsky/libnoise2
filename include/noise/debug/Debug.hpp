@@ -41,7 +41,7 @@ namespace noise
 		}
 
 		void
-		printVector( const math::Math< float >::Vector4I& v )
+		printVector( const math::Math_SSE2_Integer< float >::Vector4I& v )
 		{
 			std::cout << "v = ";
 			std::cout << ((unsigned int*)&v)[ 0 ];
@@ -52,7 +52,7 @@ namespace noise
 		}
 
 		void
-		printVectorBool( const math::Math< float >::Vector4I& v )
+		printVectorBool( const math::Math_SSE2_Integer< float >::Vector4I& v )
 		{
 			std::cout << "v = ";
 			std::cout << (((unsigned int*)&v)[ 0 ] == 0xffffffff ? 1 : 0);

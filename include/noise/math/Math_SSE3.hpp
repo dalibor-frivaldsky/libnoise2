@@ -51,8 +51,8 @@ namespace noise
 			reduce( const Vector4F& l, const Vector4F& r )
 			{
 				Vector4F	v;
-				v.lo = _mm_hadd_pd( l.lo, r.lo );
-				v.hi = _mm_hadd_pd( l.hi, r.hi );
+				v.lo = _mm_hadd_pd( l.lo, l.hi );
+				v.hi = _mm_hadd_pd( r.lo, r.hi );
 				return v;
 			}
 
