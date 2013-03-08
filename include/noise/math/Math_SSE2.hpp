@@ -1014,22 +1014,52 @@ namespace noise
 			// Shuffle operations
 			using Math_SSE2_Integer< double >::shuffle;
 
+			struct ShuffleImpl
+			{
+				
+				template< typename OrderPolicy >
+				struct DoubleOrder
+				{
+					enum e
+					{
+						o1_1 = OrderPolicy::o1 % 2,
+						o2_1 = OrderPolicy::o2 % 2,
+						o12_1 = OrderPolicy::o1 / 2,
+						o12_2 = OrderPolicy::o2 / 2,
+
+						o3_1 = OrderPolicy::o3 % 2,
+						o4_1 = OrderPolicy::o4 % 2,
+						o34_1 = OrderPolicy::o3 / 2,
+						o34_2 = OrderPolicy::o4 / 2
+					};
+				};
+
+				template< typename DoubleOrderPolicy >
+				static inline
+				Vector4F
+				shuffle( const Vector4F& a, const Vector4F& b )
+				{
+					Vector4F	v;
+
+					__m128d		t1 = _mm_shuffle_pd( a.lo, a.hi, _MM_SHUFFLE2( DoubleOrderPolicy::o1_1, DoubleOrderPolicy::o1_1 ) );
+					__m128d		t2 = _mm_shuffle_pd( a.lo, a.hi, _MM_SHUFFLE2( DoubleOrderPolicy::o2_1, DoubleOrderPolicy::o2_1 ) );
+					v.lo = _mm_shuffle_pd( t1, t2, _MM_SHUFFLE2( DoubleOrderPolicy::o12_2, DoubleOrderPolicy::o12_1 ) );
+
+					__m128d		t3 = _mm_shuffle_pd( b.lo, b.hi, _MM_SHUFFLE2( DoubleOrderPolicy::o3_1, DoubleOrderPolicy::o3_1 ) );
+					__m128d		t4 = _mm_shuffle_pd( b.lo, b.hi, _MM_SHUFFLE2( DoubleOrderPolicy::o4_1, DoubleOrderPolicy::o4_1 ) );
+					v.hi = _mm_shuffle_pd( t3, t4, _MM_SHUFFLE2( DoubleOrderPolicy::o34_2, DoubleOrderPolicy::o34_1 ) );
+
+					return v;
+				}
+
+			};
+
 			template< uint8 First, uint8 Second, uint8 Third, uint8 Fourth >
 			static inline
 			Vector4F
 			shuffle( const Vector4F& a, const Vector4F& b )
 			{
-				VECTOR4_ALIGN( ScalarF	tmp[ 8 ] );
-				storeToMemory( tmp, a );
-				storeToMemory( tmp + 4, b );
-
-				VECTOR4_ALIGN( ScalarF	res[ 4 ] );
-				res[ 0 ] = tmp[ First ];
-				res[ 1 ] = tmp[ Second ];
-				res[ 2 ] = tmp[ Third + 4 ];
-				res[ 3 ] = tmp[ Fourth + 4 ];
-
-				return loadFromMemory( res );
+				return ShuffleImpl::shuffle< typename ShuffleImpl::DoubleOrder< Order< First, Second, Third, Fourth > > >( a, b );
 			}
 
 			template< typename OrderPolicy >
@@ -1037,17 +1067,7 @@ namespace noise
 			Vector4F
 			shuffle( const Vector4F& a, const Vector4F& b )
 			{
-				VECTOR4_ALIGN( ScalarF	tmp[ 8 ] );
-				storeToMemory( tmp, a );
-				storeToMemory( tmp + 4, b );
-
-				VECTOR4_ALIGN( ScalarF	res[ 4 ] );
-				res[ 0 ] = tmp[ OrderPolicy::o1 ];
-				res[ 1 ] = tmp[ OrderPolicy::o2 ];
-				res[ 2 ] = tmp[ OrderPolicy::o3 + 4 ];
-				res[ 3 ] = tmp[ OrderPolicy::o4 + 4 ];
-
-				return loadFromMemory( res );
+				return ShuffleImpl::shuffle< typename ShuffleImpl::DoubleOrder< OrderPolicy > >( a, b );
 			}
 
 
