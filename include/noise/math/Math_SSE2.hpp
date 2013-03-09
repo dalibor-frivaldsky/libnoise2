@@ -232,6 +232,22 @@ namespace noise
 			}
 
 
+			// Interleave operations
+			static inline
+			Vector4I
+			interleaveHi( const Vector4I& a, const Vector4I& b )
+			{
+				return _mm_unpackhi_epi32( a, b );
+			}
+
+			static inline
+			Vector4I
+			interleaveLo( const Vector4I& a, const Vector4I& b )
+			{
+				return _mm_unpacklo_epi32( a, b );
+			}
+
+
 			// Arithmetic operations
 			using Math_SSE1< ValueType >::multiply;
 			using Math_SSE1< ValueType >::add;
@@ -463,6 +479,41 @@ namespace noise
 			}
 
 
+			// Distribution operations
+			using Math_SSE1< ValueType >::distribute1st;
+			using Math_SSE1< ValueType >::distribute2nd;
+			using Math_SSE1< ValueType >::distribute3rd;
+			using Math_SSE1< ValueType >::distribute4th;
+
+			static inline
+			Vector4I
+			distribute1st( const Vector4I& v )
+			{
+				return shuffle< 0, 0, 0, 0 >( v );
+			}
+
+			static inline
+			Vector4I
+			distribute2nd( const Vector4I& v )
+			{
+				return shuffle< 1, 1, 1, 1 >( v );
+			}
+
+			static inline
+			Vector4I
+			distribute3rd( const Vector4I& v )
+			{
+				return shuffle< 2, 2, 2, 2 >( v );
+			}
+
+			static inline
+			Vector4I
+			distribute4th( const Vector4I& v )
+			{
+				return shuffle< 3, 3, 3, 3 >( v );
+			}
+
+
 			// Misc
 			static inline
 			Vector4I
@@ -526,7 +577,6 @@ namespace noise
 			{
 				return shiftRightLogical( _mm_castps_si128( v ), bitCount );
 			}
-
 			
 
 			// Misc operations
@@ -1254,6 +1304,11 @@ namespace noise
 
 
 			// Distribution operations
+			using Math_SSE2_Integer< double >::distribute1st;
+			using Math_SSE2_Integer< double >::distribute2nd;
+			using Math_SSE2_Integer< double >::distribute3rd;
+			using Math_SSE2_Integer< double >::distribute4th;
+
 			static inline
 			Vector4F
 			distribute1st( const Vector4F& v )

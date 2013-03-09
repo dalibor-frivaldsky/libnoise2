@@ -87,7 +87,7 @@ namespace noise
 			
 			
 			
-			/*template< typename ValueT >
+			template< typename ValueT >
 			class PerlinImpl< ValueT, 2, 4 >: public Module< ValueT, 2 >, public PerlinBase< ValueT >
 			{
 				public:
@@ -127,34 +127,35 @@ namespace noise
 					ValueType	value = 0.0;
 					ValueType	signal = 0.0;
 					ValueType	curPersistence = 1.0;
-					ValueType	nx, ny;
 					int			octaveSeed;
 
-					x *= frequency;
-					y *= frequency;
+					typename M::Vector4F		coordV = M::vectorize( x, y );
+					typename M::Vector4F		frequencyV = M::vectorizeOne( frequency );
+					typename M::Vector4F		lacunarityV = M::vectorizeOne( lacunarity );
+
+					coordV = M::multiply( coordV, frequencyV );
 					
 					for( int curOctave = 0; curOctave < octaveCount; curOctave++ ) 
 					{
 						// Make sure that these floating-point values have the same range as a 32-
 						// bit integer so that we can pass them to the coherent-noise functions.
-						nx = M::MakeInt32Range( x );
-						ny = M::MakeInt32Range( y );
+						/*nx = M::MakeInt32Range( x );
+						ny = M::MakeInt32Range( y );*/
 						
 						// Get the coherent-noise value from the input value and add it to the
 						// final result.
 						octaveSeed = (seed + curOctave) & 0xffffffff;
-						signal = Noise::GradientCoherentNoise( nx, ny, octaveSeed, noiseQuality );
+						signal = Noise::GradientCoherentNoise( coordV, octaveSeed, noiseQuality );
 						value += signal * curPersistence;
 
 						// Prepare the next octave.
-						x *= lacunarity;
-						y *= lacunarity;
+						coordV = M::multiply( coordV, lacunarityV );
 						curPersistence *= persistence;
 					}
 
 					return value;
 				}
-			};*/
+			};
 
 			
 			
@@ -198,7 +199,6 @@ namespace noise
 					ValueType	value = 0.0;
 					ValueType	signal = 0.0;
 					ValueType	curPersistence = 1.0;
-					ValueType	nx, ny, nz, nw;
 					int			octaveSeed;
 
 					typename M::Vector4F		coordV = M::vectorize( x, y, z );
@@ -272,7 +272,6 @@ namespace noise
 					ValueType	value = 0.0;
 					ValueType	signal = 0.0;
 					ValueType	curPersistence = 1.0;
-					ValueType	nx, ny, nz, nw;
 					int			octaveSeed;
 
 					typename M::Vector4F		coordV = M::vectorize( x, y, z, w );
