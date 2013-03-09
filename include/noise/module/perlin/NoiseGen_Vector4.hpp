@@ -345,12 +345,9 @@ namespace noise
 
 					// Map the difference between the coordinates of the input value and the
 					// coordinates of the cube's outer-lower-left vertex onto an S-curve.
-					typename M::Vector4F		sCoordV;
-					typename M::Vector4F		xyzw0 = M::intToFloat( coord0V );
-					typename M::Vector4F		xyzw1 = M::intToFloat( coord1V );
-					
-					// Calculate distance from the "zero" cube coordinates
-					sCoordV = M::subtract( coordV, xyzw0 );
+					typename M::Vector4F		xyzw0 = M::subtract( coordV, M::intToFloat( coord0V ) );
+					typename M::Vector4F		xyzw1 = M::subtract( coordV, M::intToFloat( coord1V ) );
+					typename M::Vector4F		sCoordV = xyzw0;
 					
 					// Interpolate for noise quality
 					switch( noiseQuality )
@@ -383,7 +380,7 @@ namespace noise
 					
 					typename M::Vector4F		x0y0x1y1 = M::template shuffle< 1, 0, 1, 0 >( xyzw0, xyzw1 );
 					typename M::Vector4F		z0w0z1w1 = M::template shuffle< 3, 2, 3, 2 >( xyzw0, xyzw1 );
-					
+
 					int							indexBase;
 					typename M::Vector4F		interpV;
 					typename M::Vector4F		n1;
@@ -475,7 +472,6 @@ namespace noise
 					typename M::Vector4F		gradient;
 
 					typename M::Vector4F		n1 = M::template shuffle< typename ShufflePolicy::Shuffle_00 >( x0y0x1y1, z0w0z1w1 );
-					n1 = M::subtract( coordV, n1 );
 					tableIndex = indexBase + Z_NOISE_GEN * iz0 + W_NOISE_GEN * iw0;
 					tableIndex ^= (tableIndex >> SHIFT_NOISE_GEN);
 					tableIndex &= 0xff;
@@ -483,7 +479,6 @@ namespace noise
 					n1 = M::multiply( n1, gradient );
 
 					typename M::Vector4F		n2 = M::template shuffle< typename ShufflePolicy::Shuffle_01 >( x0y0x1y1, z0w0z1w1 );
-					n2 = M::subtract( coordV, n2 );
 					tableIndex = indexBase + Z_NOISE_GEN * iz0 + W_NOISE_GEN * iw1;
 					tableIndex ^= (tableIndex >> SHIFT_NOISE_GEN);
 					tableIndex &= 0xff;
@@ -493,7 +488,6 @@ namespace noise
 					typename M::Vector4F		nd1 = M::reduce( n1, n2 );
 					
 					n1 = M::template shuffle< typename ShufflePolicy::Shuffle_10 >( x0y0x1y1, z0w0z1w1 );
-					n1 = M::subtract( coordV, n1 );
 					tableIndex = indexBase + Z_NOISE_GEN * iz1 + W_NOISE_GEN * iw0;
 					tableIndex ^= (tableIndex >> SHIFT_NOISE_GEN);
 					tableIndex &= 0xff;
@@ -501,7 +495,6 @@ namespace noise
 					n1 = M::multiply( n1, gradient );
 
 					n2 = M::template shuffle< typename ShufflePolicy::Shuffle_11 >( x0y0x1y1, z0w0z1w1 );
-					n2 = M::subtract( coordV, n2 );
 					tableIndex = indexBase + Z_NOISE_GEN * iz1 + W_NOISE_GEN * iw1;
 					tableIndex ^= (tableIndex >> SHIFT_NOISE_GEN);
 					tableIndex &= 0xff;
