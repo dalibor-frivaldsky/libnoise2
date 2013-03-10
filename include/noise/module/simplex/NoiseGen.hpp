@@ -1,6 +1,6 @@
 // ModuleBase
 //
-// Copyright (C) 2011 Dalibor Frívaldský
+// Copyright (C) 2011 Dalibor FrÃ­valdskÃ½
 //
 // This library is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
@@ -22,7 +22,6 @@
 
 // libnoise
 #include <noise/Platform.hpp>
-#include <noise/BasicTypes.hpp>
 
 
 
@@ -32,31 +31,19 @@ namespace noise
 
 	namespace module
 	{
-
-		template< typename ValueType, uint8 Dimension >
-		class Simplex;
-
 
 		namespace simplex
 		{
-			template< typename ValueType, uint8 Dimension, uint8 VectorSize >
-			class SimplexImpl;
+
+			template< typename ValueType, unsigned int Dimension >
+			class NoiseGen;
+
 		}
 
 	}
-
+	
 }
 
 
 
-#include <noise/module/simplex/Simplex_Scalar.hpp>
-namespace noise
-{
-	namespace module
-	{
-		template< typename ValueType, uint8 Dimension >
-		class Simplex: public simplex::SimplexImpl< ValueType, Dimension, 1 >
-		{
-		};
-	}
-}
+#include <noise/module/simplex/NoiseGen_Scalar.hpp>

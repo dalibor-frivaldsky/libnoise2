@@ -64,6 +64,25 @@ namespace noise
 				}
 			}
 
+			static inline
+			ValueType
+			clamp( ValueType value, ValueType lowerBound, ValueType upperBound )
+			{
+				if( value < lowerBound )
+				{
+					return lowerBound;
+				}
+				else if( value > upperBound )
+				{
+					return upperBound;
+				}
+				else
+				{
+					return value;
+				}
+			}
+
+
 			// Order
 			template< uint8 _1, uint8 _2, uint8 _3, uint8 _4 >
 			struct Order
