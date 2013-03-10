@@ -202,6 +202,16 @@ namespace noise
 				return _mm_sub_ps( l, r );
 			}
 
+			static inline
+			Vector4F
+			reduce( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	tmp1 = shuffle< 0, 2, 0, 2 >( l, r );
+				Vector4F	tmp2 = shuffle< 1, 3, 1, 3 >( l, r );
+
+				return add( tmp1, tmp2 );
+			}
+
 			// Comparison
 			static inline
 			Vector4F

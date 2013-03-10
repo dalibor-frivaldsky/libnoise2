@@ -49,7 +49,7 @@ namespace noise
 
 
 
-#if defined( LIBNOISE2_AT_LEAST_SSE3 )
+#if defined( LIBNOISE2_AT_LEAST_SSE2 )
 #include <noise/module/perlin/Perlin_Vector4.hpp>
 namespace noise
 {

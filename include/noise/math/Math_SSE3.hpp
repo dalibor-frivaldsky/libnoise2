@@ -30,6 +30,8 @@ namespace noise
 		public:
 
 			// Arithmetic operations
+			using Math_SSE2::reduce;
+
 			static inline
 			Vector4F
 			reduce( const Vector4F& l, const Vector4F& r )
@@ -46,6 +48,8 @@ namespace noise
 		public:
 
 			// Arithmetic operations
+			using Math_SSE2::reduce;
+			
 			static inline
 			Vector4F
 			reduce( const Vector4F& l, const Vector4F& r )

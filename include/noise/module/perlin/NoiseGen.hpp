@@ -89,7 +89,7 @@ namespace noise
 
 
 
-#if defined( LIBNOISE2_AT_LEAST_SSE3 )
+#if defined( LIBNOISE2_AT_LEAST_SSE2 )
 #include <noise/module/perlin/NoiseGen_Vector4.hpp>
 #else
 #include <noise/module/perlin/NoiseGen_Scalar.hpp>

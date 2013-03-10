@@ -1,6 +1,6 @@
 // ModuleBase
 //
-// Copyright (C) 2011 Dalibor FrÃ­valdskÃ½
+// Copyright (C) 2011 Dalibor Frívaldský
 //
 // This library is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
@@ -35,162 +35,157 @@ namespace noise
 
 		namespace perlin
 		{
-
+		
 			template< typename ValueT >
-			class PerlinDefaults;
+			class BillowDefaults;
 			
-
-
-
 			template<>
-			class PerlinDefaults< float >
+			class BillowDefaults< float >
 			{
 				public:
 				
-				/// Default frequency for the noise::module::Perlin noise module.
-				static
+				/// Default frequency for the noise::module::Billow noise module.
+				static inline
 				float
 				Frequency()
 				{
 					return 1.0f;
 				}
 
-				/// Default lacunarity for the noise::module::Perlin noise module.
-				static
+				/// Default lacunarity for the noise::module::Billow noise module.
+				static inline
 				float
 				Lacunarity()
 				{
 					return 2.0f;
 				}
-
-				/// Default number of octaves for the noise::module::Perlin noise module.
-				static
+				
+				/// Default number of octaves for the noise::module::Billow noise module.
+				static inline
 				uint32
 				OctaveCount()
 				{
 					return 6;
 				}
-
-				/// Default persistence value for the noise::module::Perlin noise module.
-				static
+				
+				/// Default persistence value for the noise::module::Billow noise module.
+				static inline
 				float
 				Persistence()
 				{
 					return 0.5f;
 				}
-
-				/// Default noise quality for the noise::module::Perlin noise module.
-				static
+				
+				/// Default noise quality for the noise::module::Billow noise module.
+				static inline
 				NoiseQuality
 				Quality()
 				{
-					return 
-
-					QUALITY_STD;
+					return QUALITY_STD;
 				}
-
-				/// Default noise seed for the noise::module::Perlin noise module.
-				static
+				
+				/// Default noise seed for the noise::module::Billow noise module.
+				static inline
 				uint32
 				Seed()
 				{
 					return 0;
 				}
-
-				/// Maximum number of octaves for the noise::module::Perlin noise module.
-				static
+				
+				/// Maximum number of octaves for the noise::module::Billow noise module.
+				static inline
 				uint32
 				OctaveCountMax()
 				{
 					return 30;
 				}
+				
 			};
 
-			
-
 			template<>
-			class PerlinDefaults< double >
+			class BillowDefaults< double >
 			{
 				public:
 				
-				/// Default frequency for the noise::module::Perlin noise module.
-				static
+				/// Default frequency for the noise::module::Billow noise module.
+				static inline
 				double
 				Frequency()
 				{
 					return 1.0;
 				}
 
-				/// Default lacunarity for the noise::module::Perlin noise module.
-				static
+				/// Default lacunarity for the noise::module::Billow noise module.
+				static inline
 				double
 				Lacunarity()
 				{
 					return 2.0;
 				}
-
-				/// Default number of octaves for the noise::module::Perlin noise module.
-				static
+				
+				/// Default number of octaves for the noise::module::Billow noise module.
+				static inline
 				uint32
 				OctaveCount()
 				{
 					return 6;
 				}
-
-				/// Default persistence value for the noise::module::Perlin noise module.
-				static
+				
+				/// Default persistence value for the noise::module::Billow noise module.
+				static inline
 				double
 				Persistence()
 				{
 					return 0.5;
 				}
-
-				/// Default noise quality for the noise::module::Perlin noise module.
-				static
+				
+				/// Default noise quality for the noise::module::Billow noise module.
+				static inline
 				NoiseQuality
 				Quality()
 				{
 					return QUALITY_STD;
 				}
-
-				/// Default noise seed for the noise::module::Perlin noise module.
-				static
+				
+				/// Default noise seed for the noise::module::Billow noise module.
+				static inline
 				uint32
 				Seed()
 				{
 					return 0;
 				}
-
-				/// Maximum number of octaves for the noise::module::Perlin noise module.
-				static
+				
+				/// Maximum number of octaves for the noise::module::Billow noise module.
+				static inline
 				uint32
 				OctaveCountMax()
 				{
 					return 30;
 				}
+				
 			};
 
 			
 		
 			template< typename ValueT >
-			class PerlinBase
+			class BillowBase
 			{
 				public:
 				
 				typedef ValueT							ValueType;
-				typedef PerlinDefaults< ValueType >		Defaults;
+				typedef BillowDefaults< ValueType >		Defaults;
 				
 				
 				
 				public:
 				
-				PerlinBase():
+				BillowBase():
 				  frequency( Defaults::Frequency() ),
 				  lacunarity( Defaults::Lacunarity() ),
 				  octaveCount( Defaults::OctaveCount() ),
 				  persistence( Defaults::Persistence() ),
-				  noiseQuality( Defaults::Quality() ),
-				  seed( Defaults::Seed() )
+				  seed( Defaults::Seed() ),
+				  noiseQuality( Defaults::Quality() )
 				{
 				}
 				
@@ -227,7 +222,7 @@ namespace noise
 				void
 				SetOctaveCount( int octaveCount )
 				{
-					if( octaveCount < 1 || octaveCount > Defaults::OctaveCountMax() )
+					if( octaveCount < 1 || octaveCount > Defaults::OctaveCountMax )
 					{
 						// TODO throw exception
 					}
@@ -277,10 +272,10 @@ namespace noise
 				
 				ValueType			frequency;
 				ValueType			lacunarity;
-				uint32					octaveCount;
+				uint32				octaveCount;
 				ValueType			persistence;
+				uint32				seed;
 				NoiseQuality		noiseQuality;
-				uint32					seed;
 			};
 
 		}

@@ -1,6 +1,6 @@
 // ModuleBase
 //
-// Copyright (C) 2011 Dalibor FrÃ­valdskÃ½
+// Copyright (C) 2011 Dalibor Frívaldský
 //
 // This library is free software; you can redistribute it and/or modify it
 // under the terms of the GNU Lesser General Public License as published by
@@ -35,70 +35,57 @@ namespace noise
 
 		namespace perlin
 		{
-
-			template< typename ValueT >
-			class PerlinDefaults;
 			
-
-
-
+			template< typename ValueT >
+			class RidgedMultiDefaults;
+			
 			template<>
-			class PerlinDefaults< float >
+			class RidgedMultiDefaults< float >
 			{
 				public:
 				
-				/// Default frequency for the noise::module::Perlin noise module.
-				static
+				/// Default frequency for the noise::module::Billow noise module.
+				static inline
 				float
 				Frequency()
 				{
 					return 1.0f;
 				}
 
-				/// Default lacunarity for the noise::module::Perlin noise module.
-				static
+				/// Default lacunarity for the noise::module::Billow noise module.
+				static inline
 				float
 				Lacunarity()
 				{
 					return 2.0f;
 				}
-
-				/// Default number of octaves for the noise::module::Perlin noise module.
-				static
+				
+				/// Default number of octaves for the noise::module::Billow noise module.
+				static inline
 				uint32
 				OctaveCount()
 				{
 					return 6;
 				}
-
-				/// Default persistence value for the noise::module::Perlin noise module.
-				static
-				float
-				Persistence()
-				{
-					return 0.5f;
-				}
-
-				/// Default noise quality for the noise::module::Perlin noise module.
-				static
+				
+				/// Default noise quality for the noise::module::Billow noise module.
+				static inline
 				NoiseQuality
 				Quality()
 				{
-					return 
-
-					QUALITY_STD;
+					return QUALITY_STD;
 				}
-
-				/// Default noise seed for the noise::module::Perlin noise module.
-				static
+				
+				/// Default noise seed for the noise::module::Billow noise module.
+				static inline
 				uint32
 				Seed()
 				{
 					return 0;
 				}
-
-				/// Maximum number of octaves for the noise::module::Perlin noise module.
-				static
+				
+				/// Maximum number of octaves for the noise::module::Billow noise module.
+				static inline
 				uint32
 				OctaveCountMax()
 				{
@@ -106,92 +93,84 @@ namespace noise
 				}
 			};
 
-			
-
 			template<>
-			class PerlinDefaults< double >
+			class RidgedMultiDefaults< double >
 			{
+
 				public:
 				
-				/// Default frequency for the noise::module::Perlin noise module.
-				static
+				/// Default frequency for the noise::module::Billow noise module.
+				static inline
 				double
 				Frequency()
 				{
 					return 1.0;
 				}
 
-				/// Default lacunarity for the noise::module::Perlin noise module.
-				static
+				/// Default lacunarity for the noise::module::Billow noise module.
+				static inline
 				double
 				Lacunarity()
 				{
 					return 2.0;
 				}
-
-				/// Default number of octaves for the noise::module::Perlin noise module.
-				static
+				
+				/// Default number of octaves for the noise::module::Billow noise module.
+				static inline
 				uint32
 				OctaveCount()
 				{
 					return 6;
 				}
-
-				/// Default persistence value for the noise::module::Perlin noise module.
-				static
-				double
-				Persistence()
-				{
-					return 0.5;
-				}
-
-				/// Default noise quality for the noise::module::Perlin noise module.
-				static
+				
+				/// Default noise quality for the noise::module::Billow noise module.
+				static inline
 				NoiseQuality
 				Quality()
 				{
 					return QUALITY_STD;
 				}
-
-				/// Default noise seed for the noise::module::Perlin noise module.
-				static
+				
+				/// Default noise seed for the noise::module::Billow noise module.
+				static inline
 				uint32
 				Seed()
 				{
 					return 0;
 				}
-
-				/// Maximum number of octaves for the noise::module::Perlin noise module.
-				static
+				
+				/// Maximum number of octaves for the noise::module::Billow noise module.
+				static inline
 				uint32
 				OctaveCountMax()
 				{
 					return 30;
 				}
+
 			};
 
 			
 		
 			template< typename ValueT >
-			class PerlinBase
+			class RidgedMultiBase
 			{
 				public:
 				
-				typedef ValueT							ValueType;
-				typedef PerlinDefaults< ValueType >		Defaults;
+				typedef ValueT									ValueType;
+				typedef RidgedMultiDefaults< ValueType >		Defaults;
 				
 				
 				
 				public:
 				
-				PerlinBase():
+				RidgedMultiBase():
 				  frequency( Defaults::Frequency() ),
 				  lacunarity( Defaults::Lacunarity() ),
 				  octaveCount( Defaults::OctaveCount() ),
-				  persistence( Defaults::Persistence() ),
-				  noiseQuality( Defaults::Quality() ),
-				  seed( Defaults::Seed() )
+				  seed( Defaults::Seed() ),
+				  noiseQuality( Defaults::Quality() )
 				{
+					CalculateSpectralWeights();
 				}
 				
 				ValueType
@@ -204,6 +183,8 @@ namespace noise
 				SetFrequency( ValueType frequency )
 				{
 					this->frequency = frequency;
+
+					CalculateSpectralWeights();
 				}
 				
 				ValueType
@@ -216,18 +197,20 @@ namespace noise
 				SetLacunarity( ValueType lacunarity )
 				{
 					this->lacunarity = lacunarity;
+					
+					CalculateSpectralWeights();
 				}
 				
-				int
+				uint32
 				GetOctaveCount() const
 				{
 					return this->octaveCount;
 				}
 				
 				void
-				SetOctaveCount( int octaveCount )
+				SetOctaveCount( uint32 octaveCount )
 				{
-					if( octaveCount < 1 || octaveCount > Defaults::OctaveCountMax() )
+					if( octaveCount < 1 || octaveCount > Defaults::OctaveCountMax )
 					{
 						// TODO throw exception
 					}
@@ -235,26 +218,14 @@ namespace noise
 					this->octaveCount = octaveCount;
 				}
 				
-				ValueType
-				GetPersistence() const
-				{
-					return this->persistence;
-				}
-				
-				void
-				SetPersistence( ValueType persistence )
-				{
-					this->persistence = persistence;
-				}
-				
-				int
+				uint32
 				GetSeed() const
 				{
 					return this->seed;
 				}
 				
 				void
-				SetSeed( int seed )
+				SetSeed( uint32 seed )
 				{
 					this->seed = seed;
 				}
@@ -273,14 +244,44 @@ namespace noise
 				
 				
 				
+				protected:
+				
+				const ValueType*
+				GetSpectralWeights() const
+				{
+					return spectralWeights;
+				}
+				
+				
+				
+				private:
+				
+				void
+				CalculateSpectralWeights()
+				{
+					// This exponent parameter should be user-defined; it may be exposed in a
+					// future version of libnoise.
+					ValueType	h = ValueType( 1.0 );
+					ValueType	frequency = this->frequency;
+					
+					for( uint32 i = 0; i < Defaults::OctaveCountMax(); i++ )
+					{
+						// Compute weight for each frequency.
+						spectralWeights[ i ] = pow( frequency, -h );
+						frequency *= lacunarity;
+					}
+				}
+				
+				
+				
 				private:
 				
 				ValueType			frequency;
 				ValueType			lacunarity;
-				uint32					octaveCount;
-				ValueType			persistence;
+				uint32				octaveCount;
+				uint32				seed;
 				NoiseQuality		noiseQuality;
-				uint32					seed;
+				ValueType			spectralWeights[ 30 ];
 			};
 
 		}
