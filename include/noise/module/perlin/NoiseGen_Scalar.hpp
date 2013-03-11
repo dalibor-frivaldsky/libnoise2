@@ -1,6 +1,10 @@
 #pragma once
 
 
+// std c++
+#include <iostream>
+
+
 // libnoise
 #include <noise/math/Math.hpp>
 #include <noise/math/Interpolations.hpp>
@@ -78,7 +82,7 @@ namespace noise
 
 					n0   = GradientNoise( x, x0, seed );
 					n1   = GradientNoise( x, x1, seed );
-					
+
 					return Interp::LinearInterp( n0, n1, xs );
 				}
 				

@@ -173,6 +173,22 @@ namespace noise
 			}
 
 
+			// Interleave operations
+			static inline
+			Vector4F
+			interleaveHi( const Vector4F& a, const Vector4F& b )
+			{
+				return _mm_unpackhi_ps( a, b );
+			}
+
+			static inline
+			Vector4F
+			interleaveLo( const Vector4F& a, const Vector4F& b )
+			{
+				return _mm_unpacklo_ps( a, b );
+			}
+
+
 			// Arithmetic operations
 			static inline
 			Vector4F
@@ -317,6 +333,11 @@ namespace noise
 			// Shuffle operations
 			static inline void	shuffle();
 
+
+			// Interleave operations
+			static inline void interleaveHi();
+			static inline void interleaveLo();
+			
 
 			// Arithmetic operations
 			static inline void	multiply();

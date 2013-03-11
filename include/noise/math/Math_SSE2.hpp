@@ -233,6 +233,9 @@ namespace noise
 
 
 			// Interleave operations
+			using Math_SSE1< ValueType >::interleaveHi;
+			using Math_SSE1< ValueType >::interleaveLo;
+
 			static inline
 			Vector4I
 			interleaveHi( const Vector4I& a, const Vector4I& b )
@@ -1118,6 +1121,35 @@ namespace noise
 			shuffle( const Vector4F& a, const Vector4F& b )
 			{
 				return ShuffleImpl::shuffle< typename ShuffleImpl::DoubleOrder< OrderPolicy > >( a, b );
+			}
+
+
+			// Interleave operations
+			using Math_SSE2_Integer< double >::interleaveHi;
+			using Math_SSE2_Integer< double >::interleaveLo;
+
+			static inline
+			Vector4F
+			interleaveHi( const Vector4F& a, const Vector4F& b )
+			{
+				Vector4F	v;
+
+				v.hi = _mm_unpacklo_pd( a.hi, b.hi );
+				v.hi = _mm_unpackhi_pd( a.hi, b.hi );
+
+				return v;
+			}
+
+			static inline
+			Vector4F
+			interleaveLo( const Vector4F& a, const Vector4F& b )
+			{
+				Vector4F	v;
+
+				v.lo = _mm_unpacklo_pd( a.lo, b.lo );
+				v.lo = _mm_unpackhi_pd( a.lo, b.lo );
+
+				return v;
 			}
 
 

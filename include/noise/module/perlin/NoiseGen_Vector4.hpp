@@ -33,11 +33,11 @@ namespace noise
 				
 				
 				
-				public:
+			public:
 				
 				static inline
 				ValueType
-				GradientCoherentNoise( ValueType x, int seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
+				GradientCoherentNoise( ValueType x, uint32 seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
 				{
 					// Create a unit-length cube aligned along an integer boundary.  This cube
 					// surrounds the input point.
@@ -82,10 +82,14 @@ namespace noise
 					
 					return Interp::LinearInterp( n0, n1, xs );
 				}
+
+
+
+			private:
 				
 				static inline
 				ValueType
-				GradientNoise( ValueType fx, int ix, int seed )
+				GradientNoise( ValueType fx, int32 ix, uint32 seed )
 				{
 					// Randomly generate a gradient vector given the integer coordinates of the
 					// input value.  This implementation generates a random number and uses it
@@ -108,6 +112,100 @@ namespace noise
 					// vector.  The resulting value is gradient noise.  Apply a scaling value
 					// so that this noise value ranges from -1.0 to 1.0.
 					return xvGradient * xvPoint * 2.12f;
+				}
+
+
+
+			public:
+
+				static inline
+				typename M::Vector4F
+				GradientCoherentNoise4( const typename M::Vector4F& xV, const typename M::Vector4I& seedV,
+										NoiseQuality noiseQuality = QUALITY_STD )
+				{
+					// Create a unit-length cube aligned along an integer boundary.  This cube
+					// surrounds the input point.
+					typename M::Vector4I	x0V = M::floatToIntTruncated( xV );
+					x0V = M::subtract( x0V, M::signToOne( xV ) );
+					typename M::Vector4I	x1V = M::add( x0V, M::constOneI() );
+
+					// Map the difference between the coordinates of the input value and the
+					// coordinates of the cube's outer-lower-left vertex onto an S-curve.
+					typename M::Vector4F	xsV = M::subtract( xV, M::intToFloat( x0V ) );
+					
+					switch( noiseQuality )
+					{
+						case QUALITY_FAST:
+
+						// do nothing more
+						
+						break;
+
+
+						case QUALITY_STD:
+
+						xsV = Interp::SCurve3V( xsV );
+						
+						break;
+
+
+						case QUALITY_BEST:
+
+						xsV = Interp::SCurve5V( xsV );
+						
+						break;
+					}
+
+					// Now calculate the noise values at each vertex of the cube.  To generate
+					// the coherent-noise value at the input point, interpolate these eight
+					// noise values using the S-curve value as the interpolant (trilinear
+					// interpolation.)
+					typename M::Vector4F	n0V;
+					typename M::Vector4F	n1V;
+					
+					n0V = GradientNoise4( xV, x0V, seedV );
+					n1V = GradientNoise4( xV, x1V, seedV );
+
+					return Interp::LinearInterpV( n0V, n1V, xsV );
+				}
+
+
+
+			private:
+				
+				static inline
+				typename M::Vector4F
+				GradientNoise4( const typename M::Vector4F& fxV, const typename M::Vector4I& ixV,
+								const typename M::Vector4I& seedV )
+				{
+					static VECTOR4_ALIGN( uint32	seedNoiseGenA[ 4 ] ) = { SEED_NOISE_GEN, SEED_NOISE_GEN, SEED_NOISE_GEN, SEED_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	xNoiseGenA[ 4 ] ) = { X_NOISE_GEN, X_NOISE_GEN, X_NOISE_GEN, X_NOISE_GEN };
+					typename M::Vector4I	seedNoiseGenV = M::loadFromMemory( seedNoiseGenA );
+					typename M::Vector4I	xNoiseGenV = M::loadFromMemory( xNoiseGenA );
+
+					// Randomly generate a gradient vector given the integer coordinates of the
+					// input value.  This implementation generates a random number and uses it
+					// as an index into a normalized-vector lookup table.
+					typename M::Vector4I	vectorIndexV = M::multiply( seedNoiseGenV, seedV );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( xNoiseGenV, ixV ) );
+
+					vectorIndexV = M::bitXor( vectorIndexV, M::shiftRightLogical( vectorIndexV, SHIFT_NOISE_GEN ) );
+					vectorIndexV = M::bitAnd( vectorIndexV, M::vectorizeOne( 0xff ) );
+					vectorIndexV = M::multiply( vectorIndexV, M::constFourI() );
+
+					VECTOR4_ALIGN( uint32	vectorIndexA[ 4 ] );
+					M::storeToMemory( vectorIndexA, vectorIndexV );
+
+					VECTOR4_ALIGN( ValueType	xvGradientA[ 4 ] );
+					for( uint8 i = 0; i < 4; ++i )
+					{
+						xvGradientA[ i ] = Table::values()[ vectorIndexA[ i ] ];
+					}
+					
+					typename M::Vector4F	xvGradientV = M::loadFromMemory( xvGradientA );
+					typename M::Vector4F	xvPointV = M::subtract( fxV, M::intToFloat( ixV ) );
+
+					return M::multiply( M::multiply( xvGradientV, xvPointV ), M::vectorizeOne( ValueType( 2.12 ) ) );
 				}
 
 			};
@@ -268,6 +366,130 @@ namespace noise
 					// scale noise values
 					typename M::Vector4F		noiseScale = M::vectorizeOne( ValueType( 2.12 ) );
 					n0 = M::multiply( nd, noiseScale );
+				}
+
+
+
+			public:
+
+				static inline
+				typename M::Vector4F
+				GradientCoherentNoise4( const typename M::Vector4F& xV, const typename M::Vector4F& yV,
+										const typename M::Vector4I& seedV, NoiseQuality noiseQuality = QUALITY_STD )
+				{
+					// Create a unit-length cube aligned along an integer boundary.  This cube
+					// surrounds the input point.
+					typename M::Vector4I	x0V = M::floatToIntTruncated( xV );
+					x0V = M::subtract( x0V, M::signToOne( xV ) );
+					typename M::Vector4I	x1V = M::add( x0V, M::constOneI() );
+					typename M::Vector4I	y0V = M::floatToIntTruncated( yV );
+					y0V = M::subtract( y0V, M::signToOne( yV ) );
+					typename M::Vector4I	y1V = M::add( y0V, M::constOneI() );
+
+					// Map the difference between the coordinates of the input value and the
+					// coordinates of the cube's outer-lower-left vertex onto an S-curve.
+					typename M::Vector4F	xsV = M::subtract( xV, M::intToFloat( x0V ) );
+					typename M::Vector4F	ysV = M::subtract( yV, M::intToFloat( y0V ) );
+					
+					switch( noiseQuality )
+					{
+						case QUALITY_FAST:
+
+						// do nothing more
+						
+						break;
+
+
+						case QUALITY_STD:
+
+						xsV = Interp::SCurve3V( xsV );
+						ysV = Interp::SCurve3V( ysV );
+						
+						break;
+
+
+						case QUALITY_BEST:
+
+						xsV = Interp::SCurve5V( xsV );
+						ysV = Interp::SCurve5V( ysV );
+						
+						break;
+					}
+
+					// Now calculate the noise values at each vertex of the cube.  To generate
+					// the coherent-noise value at the input point, interpolate these eight
+					// noise values using the S-curve value as the interpolant (trilinear
+					// interpolation.)
+					typename M::Vector4F	n0V;
+					typename M::Vector4F	n1V;
+					typename M::Vector4F	ix0V;
+					typename M::Vector4F	ix1V;
+					
+					n0V = GradientNoise4( xV, yV, x0V, y0V, seedV );
+					n1V = GradientNoise4( xV, yV, x1V, y0V, seedV );
+					ix0V = Interp::LinearInterpV( n0V, n1V, xsV );
+
+					n0V = GradientNoise4( xV, yV, x0V, y1V, seedV );
+					n1V = GradientNoise4( xV, yV, x1V, y1V, seedV );
+					ix1V = Interp::LinearInterpV( n0V, n1V, xsV );
+
+					return Interp::LinearInterpV( ix0V, ix1V, ysV );
+				}
+
+
+
+			private:
+				
+				static inline
+				typename M::Vector4F
+				GradientNoise4( const typename M::Vector4F& fxV, const typename M::Vector4F& fyV,
+								const typename M::Vector4I& ixV, const typename M::Vector4I& iyV,
+								const typename M::Vector4I& seedV )
+				{
+					static VECTOR4_ALIGN( uint32	seedNoiseGenA[ 4 ] ) = { SEED_NOISE_GEN, SEED_NOISE_GEN, SEED_NOISE_GEN, SEED_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	xNoiseGenA[ 4 ] ) = { X_NOISE_GEN, X_NOISE_GEN, X_NOISE_GEN, X_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	yNoiseGenA[ 4 ] ) = { Y_NOISE_GEN, Y_NOISE_GEN, Y_NOISE_GEN, Y_NOISE_GEN };
+					typename M::Vector4I	seedNoiseGenV = M::loadFromMemory( seedNoiseGenA );
+					typename M::Vector4I	xNoiseGenV = M::loadFromMemory( xNoiseGenA );
+					typename M::Vector4I	yNoiseGenV = M::loadFromMemory( yNoiseGenA );
+
+					// Randomly generate a gradient vector given the integer coordinates of the
+					// input value.  This implementation generates a random number and uses it
+					// as an index into a normalized-vector lookup table.
+					typename M::Vector4I	vectorIndexV = M::multiply( seedNoiseGenV, seedV );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( xNoiseGenV, ixV ) );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( yNoiseGenV, iyV ) );
+
+					vectorIndexV = M::bitXor( vectorIndexV, M::shiftRightLogical( vectorIndexV, SHIFT_NOISE_GEN ) );
+					vectorIndexV = M::bitAnd( vectorIndexV, M::vectorizeOne( 0xff ) );
+					vectorIndexV = M::multiply( vectorIndexV, M::constFourI() );
+
+					VECTOR4_ALIGN( uint32	vectorIndexA[ 4 ] );
+					M::storeToMemory( vectorIndexA, vectorIndexV );
+
+					/*VECTOR4_ALIGN( ValueType	xvGradientA[ 4 ] );
+					VECTOR4_ALIGN( ValueType	yvGradientA[ 4 ] );
+					for( uint8 i = 0; i < 4; ++i )
+					{
+						xvGradientA[ i ] = Table::values()[ vectorIndexA[ i ] ];
+						yvGradientA[ i ] = Table::values()[ vectorIndexA[ i ] + 1 ];
+					}
+					typename M::Vector4F	xvGradientV = M::loadFromMemory( xvGradientA );
+					typename M::Vector4F	yvGradientV = M::loadFromMemory( yvGradientA );*/
+
+					typename M::Vector4F	gx1x2y1y2 = M::interleaveLo( M::loadFromMemory( Table::values() + vectorIndexA[ 0 ] ),
+																		 M::loadFromMemory( Table::values() + vectorIndexA[ 1 ] ) );
+					typename M::Vector4F	gx3x4y3y4 = M::interleaveLo( M::loadFromMemory( Table::values() + vectorIndexA[ 2 ] ),
+																		 M::loadFromMemory( Table::values() + vectorIndexA[ 3 ] ) );
+					typename M::Vector4F	xvGradientV = M::template shuffle< 0, 1, 0, 1 >( gx1x2y1y2, gx3x4y3y4 );
+					typename M::Vector4F	yvGradientV = M::template shuffle< 2, 3, 2, 3 >( gx1x2y1y2, gx3x4y3y4 );
+
+					typename M::Vector4F	xvPointV = M::subtract( fxV, M::intToFloat( ixV ) );
+					typename M::Vector4F	yvPointV = M::subtract( fyV, M::intToFloat( iyV ) );
+
+					typename M::Vector4F	nV = M::multiply( xvGradientV, xvPointV );
+					nV = M::add( nV, M::multiply( yvGradientV, yvPointV ) );
+					return M::multiply( nV, M::vectorizeOne( ValueType( 2.12 ) ) );
 				}
 
 			};
@@ -443,6 +665,149 @@ namespace noise
 					// scale noise values
 					typename M::Vector4F		noiseScale = M::vectorizeOne( ValueType( 2.12 ) );
 					n0 = M::multiply( nd, noiseScale );
+				}
+
+
+
+			public:
+
+				static inline
+				typename M::Vector4F
+				GradientCoherentNoise4( const typename M::Vector4F& xV, const typename M::Vector4F& yV,
+										const typename M::Vector4F& zV,
+										const typename M::Vector4I& seedV, NoiseQuality noiseQuality = QUALITY_STD )
+				{
+					// Create a unit-length cube aligned along an integer boundary.  This cube
+					// surrounds the input point.
+					typename M::Vector4I	x0V = M::floatToIntTruncated( xV );
+					x0V = M::subtract( x0V, M::signToOne( xV ) );
+					typename M::Vector4I	x1V = M::add( x0V, M::constOneI() );
+					typename M::Vector4I	y0V = M::floatToIntTruncated( yV );
+					y0V = M::subtract( y0V, M::signToOne( yV ) );
+					typename M::Vector4I	y1V = M::add( y0V, M::constOneI() );
+					typename M::Vector4I	z0V = M::floatToIntTruncated( zV );
+					z0V = M::subtract( z0V, M::signToOne( zV ) );
+					typename M::Vector4I	z1V = M::add( z0V, M::constOneI() );
+
+					// Map the difference between the coordinates of the input value and the
+					// coordinates of the cube's outer-lower-left vertex onto an S-curve.
+					typename M::Vector4F	xsV = M::subtract( xV, M::intToFloat( x0V ) );
+					typename M::Vector4F	ysV = M::subtract( yV, M::intToFloat( y0V ) );
+					typename M::Vector4F	zsV = M::subtract( zV, M::intToFloat( z0V ) );
+					
+					switch( noiseQuality )
+					{
+						case QUALITY_FAST:
+
+						// do nothing more
+						
+						break;
+
+
+						case QUALITY_STD:
+
+						xsV = Interp::SCurve3V( xsV );
+						ysV = Interp::SCurve3V( ysV );
+						zsV = Interp::SCurve3V( zsV );
+						
+						break;
+
+
+						case QUALITY_BEST:
+
+						xsV = Interp::SCurve5V( xsV );
+						ysV = Interp::SCurve5V( ysV );
+						zsV = Interp::SCurve5V( zsV );
+						
+						break;
+					}
+
+					// Now calculate the noise values at each vertex of the cube.  To generate
+					// the coherent-noise value at the input point, interpolate these eight
+					// noise values using the S-curve value as the interpolant (trilinear
+					// interpolation.)
+					typename M::Vector4F	n0V;
+					typename M::Vector4F	n1V;
+					typename M::Vector4F	ix0V;
+					typename M::Vector4F	ix1V;
+					typename M::Vector4F	iy0V;
+					typename M::Vector4F	iy1V;
+					
+					n0V = GradientNoise4( xV, yV, zV, x0V, y0V, z0V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, x1V, y0V, z0V, seedV );
+					ix0V = Interp::LinearInterpV( n0V, n1V, xsV );
+					n0V = GradientNoise4( xV, yV, zV, x0V, y1V, z0V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, x1V, y1V, z0V, seedV );
+					ix1V = Interp::LinearInterpV( n0V, n1V, xsV );
+					iy0V = Interp::LinearInterpV( ix0V, ix1V, ysV );
+
+					n0V = GradientNoise4( xV, yV, zV, x0V, y0V, z1V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, x1V, y0V, z1V, seedV );
+					ix0V = Interp::LinearInterpV( n0V, n1V, xsV );
+					n0V = GradientNoise4( xV, yV, zV, x0V, y1V, z1V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, x1V, y1V, z1V, seedV );
+					ix1V = Interp::LinearInterpV( n0V, n1V, xsV );
+					iy1V = Interp::LinearInterpV( ix0V, ix1V, ysV );
+
+					return Interp::LinearInterpV( iy0V, iy1V, zsV );
+				}
+
+
+
+			private:
+				
+				static inline
+				typename M::Vector4F
+				GradientNoise4( const typename M::Vector4F& fxV, const typename M::Vector4F& fyV,
+								const typename M::Vector4F& fzV,
+								const typename M::Vector4I& ixV, const typename M::Vector4I& iyV,
+								const typename M::Vector4I& izV,
+								const typename M::Vector4I& seedV )
+				{
+					static VECTOR4_ALIGN( uint32	seedNoiseGenA[ 4 ] ) = { SEED_NOISE_GEN, SEED_NOISE_GEN, SEED_NOISE_GEN, SEED_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	xNoiseGenA[ 4 ] ) = { X_NOISE_GEN, X_NOISE_GEN, X_NOISE_GEN, X_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	yNoiseGenA[ 4 ] ) = { Y_NOISE_GEN, Y_NOISE_GEN, Y_NOISE_GEN, Y_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	zNoiseGenA[ 4 ] ) = { Z_NOISE_GEN, Z_NOISE_GEN, Z_NOISE_GEN, Z_NOISE_GEN };
+					typename M::Vector4I	seedNoiseGenV = M::loadFromMemory( seedNoiseGenA );
+					typename M::Vector4I	xNoiseGenV = M::loadFromMemory( xNoiseGenA );
+					typename M::Vector4I	yNoiseGenV = M::loadFromMemory( yNoiseGenA );
+					typename M::Vector4I	zNoiseGenV = M::loadFromMemory( zNoiseGenA );
+
+					// Randomly generate a gradient vector given the integer coordinates of the
+					// input value.  This implementation generates a random number and uses it
+					// as an index into a normalized-vector lookup table.
+					typename M::Vector4I	vectorIndexV = M::multiply( seedNoiseGenV, seedV );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( xNoiseGenV, ixV ) );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( yNoiseGenV, iyV ) );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( zNoiseGenV, izV ) );
+
+					vectorIndexV = M::bitXor( vectorIndexV, M::shiftRightLogical( vectorIndexV, SHIFT_NOISE_GEN ) );
+					vectorIndexV = M::bitAnd( vectorIndexV, M::vectorizeOne( 0xff ) );
+					vectorIndexV = M::multiply( vectorIndexV, M::constFourI() );
+
+					VECTOR4_ALIGN( uint32	vectorIndexA[ 4 ] );
+					M::storeToMemory( vectorIndexA, vectorIndexV );
+
+					typename M::Vector4F	g1 = M::loadFromMemory( Table::values() + vectorIndexA[ 0 ] );
+					typename M::Vector4F	g2 = M::loadFromMemory( Table::values() + vectorIndexA[ 1 ] );
+					typename M::Vector4F	g3 = M::loadFromMemory( Table::values() + vectorIndexA[ 2 ] );
+					typename M::Vector4F	g4 = M::loadFromMemory( Table::values() + vectorIndexA[ 3 ] );
+					typename M::Vector4F	gx1x2y1y2 = M::interleaveLo( g1, g2 );
+					typename M::Vector4F	gx3x4y3y4 = M::interleaveLo( g3, g4 );
+					typename M::Vector4F	xvGradientV = M::template shuffle< 0, 1, 0, 1 >( gx1x2y1y2, gx3x4y3y4 );
+					typename M::Vector4F	yvGradientV = M::template shuffle< 2, 3, 2, 3 >( gx1x2y1y2, gx3x4y3y4 );
+					typename M::Vector4F	gz1z2____ = M::interleaveHi( g1, g2 );
+					typename M::Vector4F	gz3z4____ = M::interleaveHi( g3, g4 );
+					typename M::Vector4F	zvGradientV = M::template shuffle< 0, 1, 0, 1 >( gz1z2____, gz3z4____ );
+
+					typename M::Vector4F	xvPointV = M::subtract( fxV, M::intToFloat( ixV ) );
+					typename M::Vector4F	yvPointV = M::subtract( fyV, M::intToFloat( iyV ) );
+					typename M::Vector4F	zvPointV = M::subtract( fzV, M::intToFloat( izV ) );
+
+					typename M::Vector4F	nV = M::multiply( xvGradientV, xvPointV );
+					nV = M::add( nV, M::multiply( yvGradientV, yvPointV ) );
+					nV = M::add( nV, M::multiply( zvGradientV, zvPointV ) );
+					return M::multiply( nV, M::vectorizeOne( ValueType( 2.12 ) ) );
 				}
 
 			};
@@ -644,6 +1009,181 @@ namespace noise
 					// scale noise values
 					typename M::Vector4F		noiseScale = M::vectorizeOne( ValueType( 2.12 ) );
 					n0 = M::multiply( nd, noiseScale );
+				}
+
+
+
+			public:
+
+				static inline
+				typename M::Vector4F
+				GradientCoherentNoise4( const typename M::Vector4F& xV, const typename M::Vector4F& yV,
+										const typename M::Vector4F& zV, const typename M::Vector4F& wV,
+										const typename M::Vector4I& seedV, NoiseQuality noiseQuality = QUALITY_STD )
+				{
+					// Create a unit-length cube aligned along an integer boundary.  This cube
+					// surrounds the input point.
+					typename M::Vector4I	x0V = M::floatToIntTruncated( xV );
+					x0V = M::subtract( x0V, M::signToOne( xV ) );
+					typename M::Vector4I	x1V = M::add( x0V, M::constOneI() );
+					typename M::Vector4I	y0V = M::floatToIntTruncated( yV );
+					y0V = M::subtract( y0V, M::signToOne( yV ) );
+					typename M::Vector4I	y1V = M::add( y0V, M::constOneI() );
+					typename M::Vector4I	z0V = M::floatToIntTruncated( zV );
+					z0V = M::subtract( z0V, M::signToOne( zV ) );
+					typename M::Vector4I	z1V = M::add( z0V, M::constOneI() );
+					typename M::Vector4I	w0V = M::floatToIntTruncated( wV );
+					w0V = M::subtract( w0V, M::signToOne( wV ) );
+					typename M::Vector4I	w1V = M::add( w0V, M::constOneI() );
+
+					// Map the difference between the coordinates of the input value and the
+					// coordinates of the cube's outer-lower-left vertex onto an S-curve.
+					typename M::Vector4F	xsV = M::subtract( xV, M::intToFloat( x0V ) );
+					typename M::Vector4F	ysV = M::subtract( yV, M::intToFloat( y0V ) );
+					typename M::Vector4F	zsV = M::subtract( zV, M::intToFloat( z0V ) );
+					typename M::Vector4F	wsV = M::subtract( wV, M::intToFloat( w0V ) );
+					
+					switch( noiseQuality )
+					{
+						case QUALITY_FAST:
+
+						// do nothing more
+						
+						break;
+
+
+						case QUALITY_STD:
+
+						xsV = Interp::SCurve3V( xsV );
+						ysV = Interp::SCurve3V( ysV );
+						zsV = Interp::SCurve3V( zsV );
+						wsV = Interp::SCurve3V( wsV );
+						
+						break;
+
+
+						case QUALITY_BEST:
+
+						xsV = Interp::SCurve5V( xsV );
+						ysV = Interp::SCurve5V( ysV );
+						zsV = Interp::SCurve5V( zsV );
+						wsV = Interp::SCurve5V( wsV );
+						
+						break;
+					}
+
+					// Now calculate the noise values at each vertex of the cube.  To generate
+					// the coherent-noise value at the input point, interpolate these eight
+					// noise values using the S-curve value as the interpolant (trilinear
+					// interpolation.)
+					typename M::Vector4F	n0V;
+					typename M::Vector4F	n1V;
+					typename M::Vector4F	ix0V;
+					typename M::Vector4F	ix1V;
+					typename M::Vector4F	iy0V;
+					typename M::Vector4F	iy1V;
+					typename M::Vector4F	iz0V;
+					typename M::Vector4F	iz1V;
+					
+					n0V = GradientNoise4( xV, yV, zV, wV, x0V, y0V, z0V, w0V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, wV, x1V, y0V, z0V, w0V, seedV );
+					ix0V = Interp::LinearInterpV( n0V, n1V, xsV );
+					n0V = GradientNoise4( xV, yV, zV, wV, x0V, y1V, z0V, w0V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, wV, x1V, y1V, z0V, w0V, seedV );
+					ix1V = Interp::LinearInterpV( n0V, n1V, xsV );
+					iy0V = Interp::LinearInterpV( ix0V, ix1V, ysV );
+
+					n0V = GradientNoise4( xV, yV, zV, wV, x0V, y0V, z1V, w0V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, wV, x1V, y0V, z1V, w0V, seedV );
+					ix0V = Interp::LinearInterpV( n0V, n1V, xsV );
+					n0V = GradientNoise4( xV, yV, zV, wV, x0V, y1V, z1V, w0V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, wV, x1V, y1V, z1V, w0V, seedV );
+					ix1V = Interp::LinearInterpV( n0V, n1V, xsV );
+					iy1V = Interp::LinearInterpV( ix0V, ix1V, ysV );
+					iz0V = Interp::LinearInterpV( iy0V, iy1V, zsV );
+
+					n0V = GradientNoise4( xV, yV, zV, wV, x0V, y0V, z0V, w1V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, wV, x1V, y0V, z0V, w1V, seedV );
+					ix0V = Interp::LinearInterpV( n0V, n1V, xsV );
+					n0V = GradientNoise4( xV, yV, zV, wV, x0V, y1V, z0V, w1V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, wV, x1V, y1V, z0V, w1V, seedV );
+					ix1V = Interp::LinearInterpV( n0V, n1V, xsV );
+					iy0V = Interp::LinearInterpV( ix0V, ix1V, ysV );
+
+					n0V = GradientNoise4( xV, yV, zV, wV, x0V, y0V, z1V, w1V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, wV, x1V, y0V, z1V, w1V, seedV );
+					ix0V = Interp::LinearInterpV( n0V, n1V, xsV );
+					n0V = GradientNoise4( xV, yV, zV, wV, x0V, y1V, z1V, w1V, seedV );
+					n1V = GradientNoise4( xV, yV, zV, wV, x1V, y1V, z1V, w1V, seedV );
+					ix1V = Interp::LinearInterpV( n0V, n1V, xsV );
+					iy1V = Interp::LinearInterpV( ix0V, ix1V, ysV );
+					iz1V = Interp::LinearInterpV( iy0V, iy1V, zsV );
+
+					return Interp::LinearInterpV( iz0V, iz1V, wsV );
+				}
+
+
+
+			private:
+				
+				static inline
+				typename M::Vector4F
+				GradientNoise4( const typename M::Vector4F& fxV, const typename M::Vector4F& fyV,
+								const typename M::Vector4F& fzV, const typename M::Vector4F& fwV,
+								const typename M::Vector4I& ixV, const typename M::Vector4I& iyV,
+								const typename M::Vector4I& izV, const typename M::Vector4I& iwV,
+								const typename M::Vector4I& seedV )
+				{
+					static VECTOR4_ALIGN( uint32	seedNoiseGenA[ 4 ] ) = { SEED_NOISE_GEN, SEED_NOISE_GEN, SEED_NOISE_GEN, SEED_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	xNoiseGenA[ 4 ] ) = { X_NOISE_GEN, X_NOISE_GEN, X_NOISE_GEN, X_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	yNoiseGenA[ 4 ] ) = { Y_NOISE_GEN, Y_NOISE_GEN, Y_NOISE_GEN, Y_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	zNoiseGenA[ 4 ] ) = { Z_NOISE_GEN, Z_NOISE_GEN, Z_NOISE_GEN, Z_NOISE_GEN };
+					static VECTOR4_ALIGN( uint32	wNoiseGenA[ 4 ] ) = { W_NOISE_GEN, W_NOISE_GEN, W_NOISE_GEN, W_NOISE_GEN };
+					typename M::Vector4I	seedNoiseGenV = M::loadFromMemory( seedNoiseGenA );
+					typename M::Vector4I	xNoiseGenV = M::loadFromMemory( xNoiseGenA );
+					typename M::Vector4I	yNoiseGenV = M::loadFromMemory( yNoiseGenA );
+					typename M::Vector4I	zNoiseGenV = M::loadFromMemory( zNoiseGenA );
+					typename M::Vector4I	wNoiseGenV = M::loadFromMemory( wNoiseGenA );
+
+					// Randomly generate a gradient vector given the integer coordinates of the
+					// input value.  This implementation generates a random number and uses it
+					// as an index into a normalized-vector lookup table.
+					typename M::Vector4I	vectorIndexV = M::multiply( seedNoiseGenV, seedV );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( xNoiseGenV, ixV ) );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( yNoiseGenV, iyV ) );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( zNoiseGenV, izV ) );
+					vectorIndexV = M::add( vectorIndexV, M::multiply( wNoiseGenV, iwV ) );
+
+					vectorIndexV = M::bitXor( vectorIndexV, M::shiftRightLogical( vectorIndexV, SHIFT_NOISE_GEN ) );
+					vectorIndexV = M::bitAnd( vectorIndexV, M::vectorizeOne( 0xff ) );
+					vectorIndexV = M::multiply( vectorIndexV, M::constFourI() );
+
+					VECTOR4_ALIGN( uint32	vectorIndexA[ 4 ] );
+					M::storeToMemory( vectorIndexA, vectorIndexV );
+
+					typename M::Vector4F	g1 = M::loadFromMemory( Table::values() + vectorIndexA[ 0 ] );
+					typename M::Vector4F	g2 = M::loadFromMemory( Table::values() + vectorIndexA[ 1 ] );
+					typename M::Vector4F	g3 = M::loadFromMemory( Table::values() + vectorIndexA[ 2 ] );
+					typename M::Vector4F	g4 = M::loadFromMemory( Table::values() + vectorIndexA[ 3 ] );
+					typename M::Vector4F	gx1x2y1y2 = M::interleaveLo( g1, g2 );
+					typename M::Vector4F	gx3x4y3y4 = M::interleaveLo( g3, g4 );
+					typename M::Vector4F	xvGradientV = M::template shuffle< 0, 1, 0, 1 >( gx1x2y1y2, gx3x4y3y4 );
+					typename M::Vector4F	yvGradientV = M::template shuffle< 2, 3, 2, 3 >( gx1x2y1y2, gx3x4y3y4 );
+					typename M::Vector4F	gz1z2w1w2 = M::interleaveHi( g1, g2 );
+					typename M::Vector4F	gz3z4w3w4 = M::interleaveHi( g3, g4 );
+					typename M::Vector4F	zvGradientV = M::template shuffle< 0, 1, 0, 1 >( gz1z2w1w2, gz3z4w3w4 );
+					typename M::Vector4F	wvGradientV = M::template shuffle< 2, 3, 2, 3 >( gz1z2w1w2, gz3z4w3w4 );
+
+					typename M::Vector4F	xvPointV = M::subtract( fxV, M::intToFloat( ixV ) );
+					typename M::Vector4F	yvPointV = M::subtract( fyV, M::intToFloat( iyV ) );
+					typename M::Vector4F	zvPointV = M::subtract( fzV, M::intToFloat( izV ) );
+					typename M::Vector4F	wvPointV = M::subtract( fwV, M::intToFloat( iwV ) );
+
+					typename M::Vector4F	nV = M::multiply( xvGradientV, xvPointV );
+					nV = M::add( nV, M::multiply( yvGradientV, yvPointV ) );
+					nV = M::add( nV, M::multiply( zvGradientV, zvPointV ) );
+					nV = M::add( nV, M::multiply( wvGradientV, wvPointV ) );
+					return M::multiply( nV, M::vectorizeOne( ValueType( 2.12 ) ) );
 				}
 
 			};
