@@ -380,18 +380,18 @@ namespace noise
 
 				struct Shuffle_0_3
 				{
-					typedef typename M::template Order< 0, 1, 0, 0 >		Shuffle_00;
-					typedef typename M::template Order< 0, 1, 2, 0 >		Shuffle_01;
-					typedef typename M::template Order< 0, 3, 0, 0 >		Shuffle_10;
-					typedef typename M::template Order< 0, 3, 2, 0 >		Shuffle_11;
+					typedef typename M::template Order< 0, 1, 0, 1 >		Shuffle_00;
+					typedef typename M::template Order< 0, 1, 2, 1 >		Shuffle_01;
+					typedef typename M::template Order< 0, 3, 0, 1 >		Shuffle_10;
+					typedef typename M::template Order< 0, 3, 2, 1 >		Shuffle_11;
 				};
 
 				struct Shuffle_4_7
 				{
-					typedef typename M::template Order< 2, 1, 0, 0 >		Shuffle_00;
-					typedef typename M::template Order< 2, 1, 2, 0 >		Shuffle_01;
-					typedef typename M::template Order< 2, 3, 0, 0 >		Shuffle_10;
-					typedef typename M::template Order< 2, 3, 2, 0 >		Shuffle_11;
+					typedef typename M::template Order< 2, 1, 0, 1 >		Shuffle_00;
+					typedef typename M::template Order< 2, 1, 2, 1 >		Shuffle_01;
+					typedef typename M::template Order< 2, 3, 0, 1 >		Shuffle_10;
+					typedef typename M::template Order< 2, 3, 2, 1 >		Shuffle_11;
 				};
 
 
