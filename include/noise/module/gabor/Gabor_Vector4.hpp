@@ -103,6 +103,60 @@ namespace noise
 					return noise / (ValueType( 3.0 ) * std::sqrt( variance() ));
 				}
 
+				virtual
+				void
+				GetValue4( const ValueType* inputX, const ValueType* inputY, ValueType* output ) const
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+					typename M::Vector4F	yV = M::loadFromMemory( inputY );
+
+					xV = M::divide( xV, M::vectorizeOne( this->GetKernelRadius() ) );
+					yV = M::divide( yV, M::vectorizeOne( this->GetKernelRadius() ) );
+					
+					typename M::Vector4F	intXV = M::floor( xV );
+					typename M::Vector4F	intYV = M::floor( yV );
+					typename M::Vector4F	fracXV = M::subtract( xV, intXV );
+					typename M::Vector4F	fracYV = M::subtract( yV, intYV );
+					typename M::Vector4I	iV = M::floatToIntTruncated( intXV );
+					typename M::Vector4I	jV = M::floatToIntTruncated( intYV );
+					typename M::Vector4F	noiseV = M::constZeroF();
+
+					static VECTOR4_ALIGN( int32		diA[ 36 ] ) = { -1, -1, -1, -1,
+																	-1, -1, -1, -1,
+																	-1, -1, -1, -1,
+																	 0,  0,  0,  0,
+																	 0,  0,  0,  0,
+																	 0,  0,  0,  0,
+																	 1,  1,  1,  1,
+																	 1,  1,  1,  1,
+																	 1,  1,  1,  1 };
+					static VECTOR4_ALIGN( int32		djA[ 36 ] ) = { -1, -1, -1, -1,
+																	 0,  0,  0,  0,
+																	 1,  1,  1,  1,
+																	-1, -1, -1, -1,
+																	 0,  0,  0,  0,
+																	 1,  1,  1,  1,
+																	 0,  0,  0,  0,
+																	 1,  1,  1,  1,
+																	-1, -1, -1, -1 };					
+
+					for( int32 m = 0; m < 9; ++m )
+					{
+						typename M::Vector4I	diV = M::loadFromMemory( diA + (m * 4) );
+						typename M::Vector4I	djV = M::loadFromMemory( djA + (m * 4) );
+						typename M::Vector4I	diiV = M::add( diV, iV );
+						typename M::Vector4I	djjV = M::add( djV, jV );
+						typename M::Vector4F	fxV = M::subtract( fracXV, M::intToFloat( diV ) );
+						typename M::Vector4F	fyV = M::subtract( fracYV, M::intToFloat( djV ) );
+						typename M::Vector4I	mortonV = mortonVectorized( diiV, djjV );
+						
+						noiseV = M::add( noiseV, cell4Vectorized( mortonV, fxV, fyV ) );
+					}
+
+					noiseV = M::divide( noiseV, M::vectorizeOne( ValueType( 3.0 ) * std::sqrt( variance() ) ) );
+					M::storeToMemory( output, noiseV );
+				}
+
 
 
 			private:
@@ -330,6 +384,52 @@ namespace noise
 					}
 					
 					return noise;
+				}
+
+				inline
+				typename M::Vector4F
+				cell4Vectorized( const typename M::Vector4I sV, const typename M::Vector4F xV, const typename M::Vector4F yV ) const
+				{
+					PrngVectorType			prngVector( sV );
+					typename M::Vector4F	impulseDensityV = M::vectorizeOne( this->GetImpulseDensity() );
+					typename M::Vector4F	kernelRadiusV = M::vectorizeOne( this->GetKernelRadius() );
+					typename M::Vector4F	numberOfImpulsesPerCellV = M::multiply( impulseDensityV, M::multiply( kernelRadiusV, kernelRadiusV ) );
+					typename M::Vector4I	numberOfImpulsesV = prngVector.poisson( numberOfImpulsesPerCellV );
+
+					VECTOR4_ALIGN( uint32	numberOfImpulsesA[ 4 ] );
+					M::storeToMemory( numberOfImpulsesA, numberOfImpulsesV );
+
+					uint32					maxNumberOfImpulses = findMax( numberOfImpulsesA );
+					typename M::Vector4I	oneIV = M::constOneI();
+					typename M::Vector4F	oneFV = M::constOneF();
+
+					typename M::Vector4F	noiseV = M::constZeroF();
+					for( uint32 i = 0; i < maxNumberOfImpulses; ++i )
+					{
+						typename M::Vector4I	impulseMaskV = M::greaterThan( numberOfImpulsesV, M::constZeroI() );
+						typename M::Vector4F	xiV = prngVector.uniformNormalized();
+						typename M::Vector4F	yiV = prngVector.uniformNormalized();
+						typename M::Vector4F	wiV = prngVector.uniformRangeMinusOneToOne();
+						typename M::Vector4F	F0V = prngVector.uniformRange( this->GetFrequencyRangeStart(), this->GetFrequencyRangeEnd() );
+						typename M::Vector4F	omega0V = prngVector.uniformRange( this->GetAngularRangeStart(), this->GetAngularRangeEnd() );
+						typename M::Vector4F	xInputV = M::subtract( xV, xiV );
+						typename M::Vector4F	yInputV = M::subtract( yV, yiV );
+
+						typename M::Vector4F	radiusXV = M::multiply( xInputV, xInputV );
+						typename M::Vector4F	radiusYV = M::multiply( yInputV, yInputV );
+						typename M::Vector4F	radiusV = M::add( radiusXV, radiusYV );
+						typename M::Vector4I	radiusMaskV = M::castToInt( M::lowerThan( radiusV, oneFV ) );
+						typename M::Vector4I	calcMaskV = M::bitAnd( radiusMaskV, impulseMaskV );
+
+						if( M::isAllZeros( calcMaskV ) == false )
+						{
+							noiseV = M::add( noiseV, cellPart( xInputV, yInputV, wiV, F0V, omega0V, calcMaskV ) );
+						}
+
+						numberOfImpulsesV = M::subtract( numberOfImpulsesV, M::bitAnd( impulseMaskV, oneIV ) );
+					}
+
+					return noiseV;
 				}
 
 				inline
