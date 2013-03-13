@@ -19,7 +19,7 @@ namespace noise
 		{
 
 			template< typename ValueT >
-			class NoiseGen< ValueT, 1 >
+			class NoiseGenImpl< ValueT, 1, 1 >
 			{
 
 				public:
@@ -34,18 +34,18 @@ namespace noise
 				
 				public:
 				
-				static inline
+				static
 				ValueType
 				GradientCoherentNoise( ValueType x, int seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
 				{
 					// Create a unit-length cube aligned along an integer boundary.  This cube
 					// surrounds the input point.
-					int	x0 = ( x > 0.0 ? (int) x: (int) x - 1 );
+					int	x0 = ( x > ValueType( 0.0 ) ? (int) x: (int) x - 1 );
 					int	x1 = x0 + 1;
 					
 					// Map the difference between the coordinates of the input value and the
 					// coordinates of the cube's outer-lower-left vertex onto an S-curve.
-					ValueType xs = 0.0f;
+					ValueType xs = ValueType( 0.0 );
 					
 					switch( noiseQuality )
 					{
@@ -82,7 +82,7 @@ namespace noise
 					return Interp::LinearInterp( n0, n1, xs );
 				}
 				
-				static inline
+				static
 				ValueType
 				GradientNoise( ValueType fx, int ix, int seed )
 				{
@@ -106,7 +106,7 @@ namespace noise
 					// Now compute the dot product of the gradient vector with the distance
 					// vector.  The resulting value is gradient noise.  Apply a scaling value
 					// so that this noise value ranges from -1.0 to 1.0.
-					return xvGradient * xvPoint * 2.12f;
+					return xvGradient * xvPoint * ValueType( 2.12 );
 				}
 
 			};
@@ -114,7 +114,7 @@ namespace noise
 
 
 			template< typename ValueT >
-			class NoiseGen< ValueT, 2 >
+			class NoiseGenImpl< ValueT, 2, 1 >
 			{
 
 				public:
@@ -129,7 +129,7 @@ namespace noise
 
 				public:
 				
-				static inline
+				static
 				ValueType
 				GradientCoherentNoise( ValueType x, ValueType y, int seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
 				{
@@ -186,7 +186,7 @@ namespace noise
 					return Interp::LinearInterp( ix0, ix1, ys );
 				}
 				
-				static inline
+				static
 				ValueType
 				GradientNoise( ValueType fx, ValueType fy, int ix, int iy, int seed )
 				{
@@ -222,7 +222,7 @@ namespace noise
 
 
 			template< typename ValueT >
-			class NoiseGen< ValueT, 3 >
+			class NoiseGenImpl< ValueT, 3, 1 >
 			{
 
 				public:
@@ -237,7 +237,7 @@ namespace noise
 
 				public:
 				
-				static inline
+				static
 				ValueType
 				GradientCoherentNoise( ValueType x, ValueType y, ValueType z, int seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
 				{
@@ -307,7 +307,7 @@ namespace noise
 					return Interp::LinearInterp( iy0, iy1, zs );
 				}
 				
-				static inline
+				static
 				ValueType
 				GradientNoise( ValueType fx, ValueType fy, ValueType fz, int ix, int iy, int iz, int seed )
 				{
@@ -347,7 +347,7 @@ namespace noise
 
 
 			template< typename ValueT >
-			class NoiseGen< ValueT, 4 >
+			class NoiseGenImpl< ValueT, 4, 1 >
 			{
 
 				public:
@@ -362,7 +362,7 @@ namespace noise
 
 				public:
 				
-				static inline
+				static
 				ValueType
 				GradientCoherentNoise( ValueType x, ValueType y, ValueType z, ValueType w, int seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
 				{
@@ -454,7 +454,7 @@ namespace noise
 					return Interp::LinearInterp( iz0, iz1, ws );
 				}
 				
-				static inline
+				static
 				ValueType
 				GradientNoise( ValueType fx, ValueType fy, ValueType fz, ValueType fw, int ix, int iy, int iz, int iw, int seed )
 				{
