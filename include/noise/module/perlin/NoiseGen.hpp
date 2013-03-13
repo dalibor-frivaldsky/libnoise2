@@ -78,8 +78,11 @@ namespace noise
 			
 			
 			
-			template< typename ValueType, unsigned int Dimension >
+			template< typename ValueType, uint8 Dimension >
 			class NoiseGen;
+
+			template< typename ValueType, uint8 Dimension, uint8 VectorSize >
+			class NoiseGenImpl;
 
 		}
 
@@ -91,6 +94,32 @@ namespace noise
 
 #if defined( LIBNOISE2_AT_LEAST_SSE2 )
 #include <noise/module/perlin/NoiseGen_Vector4.hpp>
+namespace noise
+{
+	namespace module
+	{
+		namespace perlin
+		{
+			template< typename ValueType, uint8 Dimension >
+			class NoiseGen: public perlin::NoiseGenImpl< ValueType, Dimension, 4 >
+			{
+			};
+		}
+	}
+}
 #else
 #include <noise/module/perlin/NoiseGen_Scalar.hpp>
+namespace noise
+{
+	namespace module
+	{
+		namespace perlin
+		{
+			template< typename ValueType, uint8 Dimension >
+			class NoiseGen: public perlin::NoiseGenImpl< ValueType, Dimension, 1 >
+			{
+			};
+		}
+	}
+}
 #endif

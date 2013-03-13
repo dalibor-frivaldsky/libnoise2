@@ -18,6 +18,7 @@ namespace noise
 	namespace debug
 	{
 
+		static inline
 		void
 		printVector( const math::Math< float >::Vector4F& v )
 		{
@@ -29,6 +30,7 @@ namespace noise
 			std::cout << std::endl;
 		}
 
+		static inline
 		void
 		printVector( const math::Math< double >::Vector4F& v )
 		{
@@ -40,6 +42,7 @@ namespace noise
 			std::cout << std::endl;
 		}
 
+		static inline
 		void
 		printVector( const math::Math_SSE2_Integer< float >::Vector4I& v )
 		{
@@ -51,6 +54,7 @@ namespace noise
 			std::cout << std::endl;
 		}
 
+		static inline
 		void
 		printVectorBool( const math::Math_SSE2_Integer< float >::Vector4I& v )
 		{

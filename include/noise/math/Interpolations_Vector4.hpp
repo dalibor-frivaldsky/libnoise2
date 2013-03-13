@@ -99,7 +99,7 @@ namespace noise
 			ValueType
 			SCurve3( ValueType a )
 			{
-				return (a * a * (3.0 - 2.0 * a));
+				return (a * a * (ValueType( 3.0 ) - ValueType( 2.0 ) * a));
 			}
 			
 			static inline
@@ -141,7 +141,7 @@ namespace noise
 				ValueType	a4 = a3 * a;
 				ValueType	a5 = a4 * a;
 				
-				return (6.0 * a5) - (15.0 * a4) + (10.0 * a3);
+				return (ValueType( 6.0 ) * a5) - (ValueType( 15.0 ) * a4) + (ValueType( 10.0 ) * a3);
 			}
 			
 			static inline

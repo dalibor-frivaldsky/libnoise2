@@ -20,7 +20,7 @@ namespace noise
 		{
 
 			template< typename ValueT >
-			class NoiseGen< ValueT, 1 >
+			class NoiseGenImpl< ValueT, 1, 4 >
 			{
 
 				public:
@@ -213,7 +213,7 @@ namespace noise
 
 
 			template< typename ValueT >
-			class NoiseGen< ValueT, 2 >
+			class NoiseGenImpl< ValueT, 2, 4 >
 			{
 
 				public:
@@ -228,7 +228,7 @@ namespace noise
 
 				public:
 				
-				static inline
+				static
 				ValueType
 				GradientCoherentNoise( typename M::Vector4F& coordV, int seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
 				{
@@ -320,7 +320,7 @@ namespace noise
 				
 
 				template< typename ShufflePolicy >
-				static inline
+				static
 				void
 				calculateNoisePart( typename M::Vector4F& x0y0x1y1,
 									typename M::Vector4I& indexBaseV, typename M::Vector4I& ix0x1y0y1,
@@ -497,7 +497,7 @@ namespace noise
 
 
 			template< typename ValueT >
-			class NoiseGen< ValueT, 3 >
+			class NoiseGenImpl< ValueT, 3, 4 >
 			{
 
 				public:
@@ -512,7 +512,7 @@ namespace noise
 
 				public:
 				
-				static inline
+				static
 				ValueType
 				GradientCoherentNoise( typename M::Vector4F& coordV, int seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
 				{
@@ -602,24 +602,24 @@ namespace noise
 
 				struct Shuffle_0_3
 				{
-					typedef typename M::template Order< 0, 1, 0, 0 >		Shuffle_00;
-					typedef typename M::template Order< 0, 1, 2, 0 >		Shuffle_01;
-					typedef typename M::template Order< 0, 3, 0, 0 >		Shuffle_10;
-					typedef typename M::template Order< 0, 3, 2, 0 >		Shuffle_11;
+					typedef typename M::template Order< 0, 1, 0, 1 >		Shuffle_00;
+					typedef typename M::template Order< 0, 1, 2, 1 >		Shuffle_01;
+					typedef typename M::template Order< 0, 3, 0, 1 >		Shuffle_10;
+					typedef typename M::template Order< 0, 3, 2, 1 >		Shuffle_11;
 				};
 
 				struct Shuffle_4_7
 				{
-					typedef typename M::template Order< 2, 1, 0, 0 >		Shuffle_00;
-					typedef typename M::template Order< 2, 1, 2, 0 >		Shuffle_01;
-					typedef typename M::template Order< 2, 3, 0, 0 >		Shuffle_10;
-					typedef typename M::template Order< 2, 3, 2, 0 >		Shuffle_11;
+					typedef typename M::template Order< 2, 1, 0, 1 >		Shuffle_00;
+					typedef typename M::template Order< 2, 1, 2, 1 >		Shuffle_01;
+					typedef typename M::template Order< 2, 3, 0, 1 >		Shuffle_10;
+					typedef typename M::template Order< 2, 3, 2, 1 >		Shuffle_11;
 				};
 
 
 
 				template< typename ShufflePolicy >
-				static inline
+				static
 				void
 				calculateNoisePart( typename M::Vector4F& x0y0x1y1, typename M::Vector4F& z0__z1__,
 									typename M::Vector4I& indexBaseV, typename M::Vector4I& iy0y1z0z1,
@@ -815,7 +815,7 @@ namespace noise
 
 
 			template< typename ValueT >
-			class NoiseGen< ValueT, 4 >
+			class NoiseGenImpl< ValueT, 4, 4 >
 			{
 
 				public:
@@ -830,7 +830,7 @@ namespace noise
 
 				public:
 				
-				static inline
+				static
 				ValueType
 				GradientCoherentNoise( typename M::Vector4F& coordV, int seed = 0, NoiseQuality noiseQuality = QUALITY_STD )
 				{
@@ -963,7 +963,7 @@ namespace noise
 
 
 				template< typename ShufflePolicy >
-				static inline
+				static
 				void
 				calculateNoisePart( typename M::Vector4F& x0y0x1y1, typename M::Vector4F& z0w0z1w1,
 									typename M::Vector4I& indexBaseV, typename M::Vector4I& iz0z1w0w1,
