@@ -50,6 +50,16 @@ namespace noise
 			virtual
 			ValueType
 			GetValue( ValueType x ) const = 0;
+
+			virtual
+			void
+			GetValue4( const ValueType* inputX, ValueType* output ) const
+			{
+				for( uint8 i = 0; i < 4; ++i )
+				{
+					output[ i ] = GetValue( inputX[ i ] );
+				}
+			}
 			
 		};
 		
@@ -87,6 +97,16 @@ namespace noise
 			virtual
 			ValueType
 			GetValue( ValueType x, ValueType y ) const = 0;
+
+			virtual
+			void
+			GetValue4( const ValueType* inputX, const ValueType* inputY, ValueType* output ) const
+			{
+				for( uint8 i = 0; i < 4; ++i )
+				{
+					output[ i ] = GetValue( inputX[ i ], inputY[ i ] );
+				}
+			}
 			
 		};
 		
@@ -124,6 +144,16 @@ namespace noise
 			virtual
 			ValueType
 			GetValue( ValueType x, ValueType y, ValueType z ) const = 0;
+
+			virtual
+			void
+			GetValue4( const ValueType* inputX, const ValueType* inputY, const ValueType* inputZ, ValueType* output ) const
+			{
+				for( uint8 i = 0; i < 4; ++i )
+				{
+					output[ i ] = GetValue( inputX[ i ], inputY[ i ], inputZ[ i ] );
+				}
+			}
 			
 		};
 		
@@ -161,6 +191,17 @@ namespace noise
 			virtual
 			ValueType
 			GetValue( ValueType x, ValueType y, ValueType z, ValueType w ) const = 0;
+
+			virtual
+			void
+			GetValue4( const ValueType* inputX, const ValueType* inputY, const ValueType* inputZ, const ValueType* inputW,
+					   ValueType* output ) const
+			{
+				for( uint8 i = 0; i < 4; ++i )
+				{
+					output[ i ] = GetValue( inputX[ i ], inputY[ i ], inputZ[ i ], inputW[ i ] );
+				}
+			}
 			
 		};
 		

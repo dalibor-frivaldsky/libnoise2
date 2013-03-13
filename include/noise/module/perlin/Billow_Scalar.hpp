@@ -104,6 +104,7 @@ namespace noise
 
 					return value;
 				}
+	
 			};
 			
 			

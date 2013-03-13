@@ -104,6 +104,47 @@ namespace noise
 
 					return value;
 				}
+
+				void
+				GetValue4( const ValueType* inputX, ValueType* output )
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+
+					typename M::Vector4F	frequencyV = M::vectorizeOne( this->GetFrequency() );
+					typename M::Vector4F	lacunarityV = M::vectorizeOne( this->GetLacunarity() );
+					uint32					octaveCount = this->GetOctaveCount();
+					typename M::Vector4F	persistenceV = M::vectorizeOne( this->GetPersistence() );
+					typename M::Vector4I	seedV = M::vectorizeOne( this->GetSeed() );
+					NoiseQuality			noiseQuality = this->GetNoiseQuality();
+
+					typename M::Vector4F	valueV = M::constZeroF();
+					typename M::Vector4F	signalV = M::constZeroF();
+					typename M::Vector4F	curPersistenceV = M::constOneF();
+					typename M::Vector4F	nxV;
+					
+					for( uint32 curOctave = 0; curOctave < octaveCount; curOctave++ ) 
+					{
+						// Make sure that these floating-point values have the same range as a 32-
+						// bit integer so that we can pass them to the coherent-noise functions.
+						//nx = M::MakeInt32Range( x );
+						nxV = xV;
+						
+						// Get the coherent-noise value from the input value and add it to the
+						// final result.
+						signalV = Noise::GradientCoherentNoise4( nxV, seedV, noiseQuality );
+						signalV = M::subtract( M::multiply( M::constTwoF(), M::abs( signalV ) ), M::constOneF() );
+						valueV = M::add( valueV, M::multiply( signalV, curPersistenceV ) );
+
+						// Prepare the next octave.
+						xV = M::multiply( xV, lacunarityV );
+						curPersistenceV = M::multiply( curPersistenceV, persistenceV );
+						seedV = M::add( seedV, M::constOneI() );
+					}
+
+					valueV = M::add( valueV, M::vectorizeOne( ValueType( 0.5 ) ) );
+					M::storeToMemory( output, valueV );
+				}
+
 			};
 			
 			
@@ -179,6 +220,51 @@ namespace noise
 
 					return value;
 				}
+
+				void
+				GetValue4( const ValueType* inputX, const ValueType* inputY, ValueType* output )
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+					typename M::Vector4F	yV = M::loadFromMemory( inputY );
+
+					typename M::Vector4F	frequencyV = M::vectorizeOne( this->GetFrequency() );
+					typename M::Vector4F	lacunarityV = M::vectorizeOne( this->GetLacunarity() );
+					uint32					octaveCount = this->GetOctaveCount();
+					typename M::Vector4F	persistenceV = M::vectorizeOne( this->GetPersistence() );
+					typename M::Vector4I	seedV = M::vectorizeOne( this->GetSeed() );
+					NoiseQuality			noiseQuality = this->GetNoiseQuality();
+
+					typename M::Vector4F	valueV = M::constZeroF();
+					typename M::Vector4F	signalV = M::constZeroF();
+					typename M::Vector4F	curPersistenceV = M::constOneF();
+					typename M::Vector4F	nxV;
+					typename M::Vector4F	nyV;
+
+					for( uint32 curOctave = 0; curOctave < octaveCount; curOctave++ ) 
+					{
+						// Make sure that these floating-point values have the same range as a 32-
+						// bit integer so that we can pass them to the coherent-noise functions.
+						//nx = M::MakeInt32Range( x );
+						nxV = xV;
+						nyV = yV;
+						
+						// Get the coherent-noise value from the input value and add it to the
+						// final result.
+						signalV = Noise::GradientCoherentNoise4( nxV, nyV, seedV, noiseQuality );
+						signalV = M::subtract( M::multiply( M::constTwoF(), M::abs( signalV ) ), M::constOneF() );
+						valueV = M::add( valueV, M::multiply( signalV, curPersistenceV ) );
+
+						// Prepare the next octave.
+						xV = M::multiply( xV, lacunarityV );
+						yV = M::multiply( yV, lacunarityV );
+						curPersistenceV = M::multiply( curPersistenceV, persistenceV );
+						seedV = M::add( seedV, M::constOneI() );
+					}
+
+					valueV = M::add( valueV, M::vectorizeOne( ValueType( 0.5 ) ) );
+					M::storeToMemory( output, valueV );
+				}
+
 			};
 
 			
@@ -226,7 +312,7 @@ namespace noise
 					ValueType	nx, ny, nz;
 					uint32		octaveSeed;
 
-					typename M::Vector4F		coordV = M::vectorize( x, y );
+					typename M::Vector4F		coordV = M::vectorize( x, y, z );
 					typename M::Vector4F		frequencyV = M::vectorizeOne( frequency );
 					typename M::Vector4F		lacunarityV = M::vectorizeOne( lacunarity );
 
@@ -255,6 +341,55 @@ namespace noise
 
 					return value;
 				}
+
+				void
+				GetValue4( const ValueType* inputX, const ValueType* inputY, const ValueType* inputZ, ValueType* output )
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+					typename M::Vector4F	yV = M::loadFromMemory( inputY );
+					typename M::Vector4F	zV = M::loadFromMemory( inputZ );
+
+					typename M::Vector4F	frequencyV = M::vectorizeOne( this->GetFrequency() );
+					typename M::Vector4F	lacunarityV = M::vectorizeOne( this->GetLacunarity() );
+					uint32					octaveCount = this->GetOctaveCount();
+					typename M::Vector4F	persistenceV = M::vectorizeOne( this->GetPersistence() );
+					typename M::Vector4I	seedV = M::vectorizeOne( this->GetSeed() );
+					NoiseQuality			noiseQuality = this->GetNoiseQuality();
+
+					typename M::Vector4F	valueV = M::constZeroF();
+					typename M::Vector4F	signalV = M::constZeroF();
+					typename M::Vector4F	curPersistenceV = M::constOneF();
+					typename M::Vector4F	nxV;
+					typename M::Vector4F	nyV;
+					typename M::Vector4F	nzV;
+
+					for( uint32 curOctave = 0; curOctave < octaveCount; curOctave++ ) 
+					{
+						// Make sure that these floating-point values have the same range as a 32-
+						// bit integer so that we can pass them to the coherent-noise functions.
+						//nx = M::MakeInt32Range( x );
+						nxV = xV;
+						nyV = yV;
+						nzV = zV;
+						
+						// Get the coherent-noise value from the input value and add it to the
+						// final result.
+						signalV = Noise::GradientCoherentNoise4( nxV, nyV, nzV, seedV, noiseQuality );
+						signalV = M::subtract( M::multiply( M::constTwoF(), M::abs( signalV ) ), M::constOneF() );
+						valueV = M::add( valueV, M::multiply( signalV, curPersistenceV ) );
+
+						// Prepare the next octave.
+						xV = M::multiply( xV, lacunarityV );
+						yV = M::multiply( yV, lacunarityV );
+						zV = M::multiply( zV, lacunarityV );
+						curPersistenceV = M::multiply( curPersistenceV, persistenceV );
+						seedV = M::add( seedV, M::constOneI() );
+					}
+
+					valueV = M::add( valueV, M::vectorizeOne( ValueType( 0.5 ) ) );
+					M::storeToMemory( output, valueV );
+				}
+
 			};
 			
 			
@@ -302,7 +437,7 @@ namespace noise
 					ValueType	nx, ny, nz, nw;
 					uint32		octaveSeed;
 
-					typename M::Vector4F		coordV = M::vectorize( x, y );
+					typename M::Vector4F		coordV = M::vectorize( x, y, z, w );
 					typename M::Vector4F		frequencyV = M::vectorizeOne( frequency );
 					typename M::Vector4F		lacunarityV = M::vectorizeOne( lacunarity );
 
@@ -331,6 +466,59 @@ namespace noise
 					value += ValueType( 0.5 );
 
 					return value;
+				}
+
+				void
+				GetValue4( const ValueType* inputX, const ValueType* inputY, const ValueType* inputZ, const ValueType* inputW,
+						   ValueType* output )
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+					typename M::Vector4F	yV = M::loadFromMemory( inputY );
+					typename M::Vector4F	zV = M::loadFromMemory( inputZ );
+					typename M::Vector4F	wV = M::loadFromMemory( inputW );
+
+					typename M::Vector4F	frequencyV = M::vectorizeOne( this->GetFrequency() );
+					typename M::Vector4F	lacunarityV = M::vectorizeOne( this->GetLacunarity() );
+					uint32					octaveCount = this->GetOctaveCount();
+					typename M::Vector4F	persistenceV = M::vectorizeOne( this->GetPersistence() );
+					typename M::Vector4I	seedV = M::vectorizeOne( this->GetSeed() );
+					NoiseQuality			noiseQuality = this->GetNoiseQuality();
+
+					typename M::Vector4F	valueV = M::constZeroF();
+					typename M::Vector4F	signalV = M::constZeroF();
+					typename M::Vector4F	curPersistenceV = M::constOneF();
+					typename M::Vector4F	nxV;
+					typename M::Vector4F	nyV;
+					typename M::Vector4F	nzV;
+					typename M::Vector4F	nwV;
+
+					for( uint32 curOctave = 0; curOctave < octaveCount; curOctave++ ) 
+					{
+						// Make sure that these floating-point values have the same range as a 32-
+						// bit integer so that we can pass them to the coherent-noise functions.
+						//nx = M::MakeInt32Range( x );
+						nxV = xV;
+						nyV = yV;
+						nzV = zV;
+						nwV = wV;
+						
+						// Get the coherent-noise value from the input value and add it to the
+						// final result.
+						signalV = Noise::GradientCoherentNoise4( nxV, nyV, nzV, nwV, seedV, noiseQuality );
+						signalV = M::subtract( M::multiply( M::constTwoF(), M::abs( signalV ) ), M::constOneF() );
+						valueV = M::add( valueV, M::multiply( signalV, curPersistenceV ) );
+
+						// Prepare the next octave.
+						xV = M::multiply( xV, lacunarityV );
+						yV = M::multiply( yV, lacunarityV );
+						zV = M::multiply( zV, lacunarityV );
+						wV = M::multiply( wV, lacunarityV );
+						curPersistenceV = M::multiply( curPersistenceV, persistenceV );
+						seedV = M::add( seedV, M::constOneI() );
+					}
+
+					valueV = M::add( valueV, M::vectorizeOne( ValueType( 0.5 ) ) );
+					M::storeToMemory( output, valueV );
 				}
 
 			};

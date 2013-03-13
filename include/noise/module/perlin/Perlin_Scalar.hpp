@@ -84,15 +84,6 @@ namespace noise
 					return value;
 				}
 
-				void
-				GetValue4( const ValueType* inputX, ValueType* output )
-				{
-					for( uint8 i = 0; i < 4; ++i )
-					{
-						output[ i ] = GetValue( inputX[ i ] );
-					}
-				}
-
 			};
 			
 			
@@ -163,15 +154,6 @@ namespace noise
 					}
 
 					return value;
-				}
-
-				void
-				GetValue4( const ValueType* inputX, const ValueType* inputY, ValueType* output )
-				{
-					for( uint8 i = 0; i < 4; ++i )
-					{
-						output[ i ] = GetValue( inputX[ i ], inputY[ i ] );
-					}
 				}
 
 			};
@@ -247,15 +229,6 @@ namespace noise
 					}
 
 					return value;
-				}
-
-				void
-				GetValue4( const ValueType* inputX, const ValueType* inputY, const ValueType* inputZ, ValueType* output )
-				{
-					for( uint8 i = 0; i < 4; ++i )
-					{
-						output[ i ] = GetValue( inputX[ i ], inputY[ i ], inputZ[ i ] );
-					}
 				}
 
 			};
@@ -334,16 +307,6 @@ namespace noise
 					}
 
 					return value;
-				}
-
-				void
-				GetValue4( const ValueType* inputX, const ValueType* inputY, const ValueType* inputZ, const ValueType* inputW,
-						   ValueType* output )
-				{
-					for( uint8 i = 0; i < 4; ++i )
-					{
-						output[ i ] = GetValue( inputX[ i ], inputY[ i ], inputZ[ i ], inputW[ i ] );
-					}
 				}
 
 			};

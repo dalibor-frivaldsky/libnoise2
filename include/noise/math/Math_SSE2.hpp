@@ -1134,7 +1134,7 @@ namespace noise
 			{
 				Vector4F	v;
 
-				v.hi = _mm_unpacklo_pd( a.hi, b.hi );
+				v.lo = _mm_unpacklo_pd( a.hi, b.hi );
 				v.hi = _mm_unpackhi_pd( a.hi, b.hi );
 
 				return v;
@@ -1147,7 +1147,7 @@ namespace noise
 				Vector4F	v;
 
 				v.lo = _mm_unpacklo_pd( a.lo, b.lo );
-				v.lo = _mm_unpackhi_pd( a.lo, b.lo );
+				v.hi = _mm_unpackhi_pd( a.lo, b.lo );
 
 				return v;
 			}
@@ -1206,6 +1206,16 @@ namespace noise
 				Vector4F	tmp2 = shuffle< 1, 3, 1, 3 >( l, r );
 
 				return add( tmp1, tmp2 );
+			}
+
+			static inline
+			Vector4F
+			abs( const Vector4F& v )
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int64, invSignMaskA, ~0x8000000000000000 );
+				Vector4F	invSignMaskV = loadFromMemory( (ScalarF*) invSignMaskA );
+
+				return bitAnd( v, invSignMaskV );
 			}
 
 			// Comparison

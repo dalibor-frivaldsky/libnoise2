@@ -130,6 +130,73 @@ namespace noise
 
 					return (value * ValueType( 1.25 )) - ValueType( 1.0 );
 				}
+
+				void
+				GetValue4( const ValueType* inputX, ValueType* output )
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+
+					typename M::Vector4F	frequencyV = M::vectorizeOne( this->GetFrequency() );
+					typename M::Vector4F	lacunarityV = M::vectorizeOne( this->GetLacunarity() );
+					uint32					octaveCount = this->GetOctaveCount();
+					typename M::Vector4I	seedV = M::vectorizeOne( this->GetSeed() );
+					NoiseQuality			noiseQuality = this->GetNoiseQuality();
+					const ValueType*		spectralWeights = this->GetSpectralWeights();
+
+					typename M::Vector4F	valueV = M::constZeroF();
+					typename M::Vector4F	signalV = M::constZeroF();
+					typename M::Vector4F	weightV = M::constOneF();
+					typename M::Vector4F	nxV;
+
+					// These parameters should be user-defined; they may be exposed in a
+					// future version of libnoise.
+					typename M::Vector4F	offsetV = M::constOneF();
+					typename M::Vector4F	gainV = M::constTwoF();
+					
+					for( uint32 curOctave = 0; curOctave < octaveCount; curOctave++ ) 
+					{
+						// Make sure that these floating-point values have the same range as a 32-
+						// bit integer so that we can pass them to the coherent-noise functions.
+						//nx = M::MakeInt32Range( x );
+						nxV = xV;
+						
+						// Get the coherent-noise value from the input value and add it to the
+						// final result.
+						signalV = Noise::GradientCoherentNoise4( nxV, seedV, noiseQuality );
+
+						// Make the ridges.
+						signalV = M::abs( signalV );
+						signalV = M::subtract( offsetV, signalV );
+
+						// Square the signal to increase the sharpness of the ridges.
+						signalV = M::multiply( signalV, signalV );
+
+						// The weighting from the previous octave is applied to the signal.
+						// Larger values have higher weights, producing sharp points along the
+						// ridges.
+						signalV = M::multiply( signalV, weightV );
+
+						// Weight successive contributions by the previous signal.
+						weightV = M::multiply( signalV, gainV );
+
+						typename M::Vector4F	gtMaskV = M::greaterThan( weightV, M::constOneF() );
+						weightV = M::blend( weightV, M::constOneF(), M::castToInt( gtMaskV ) );
+
+						typename M::Vector4F	ltMaskV = M::lowerThan( weightV, M::constZeroF() );
+						weightV = M::blend( weightV, M::constZeroF(), M::castToInt( ltMaskV ) );
+						
+						// Add the signal to the output value.
+						valueV = M::add( valueV, M::multiply( signalV, M::vectorizeOne( spectralWeights[ curOctave ] ) ) );
+
+						// Prepare the next octave.
+						xV = M::multiply( xV, lacunarityV );
+						seedV = M::add( seedV, M::constOneI() );
+					}
+
+					valueV = M::subtract( M::multiply( valueV, M::vectorizeOne( ValueType( 1.25 ) ) ), M::constOneF() );
+					M::storeToMemory( output, valueV );
+				}
+
 			};
 			
 			
@@ -231,6 +298,77 @@ namespace noise
 
 					return (value * ValueType( 1.25 )) - ValueType( 1.0 );
 				}
+
+				void
+				GetValue4( const ValueType* inputX, const ValueType* inputY, ValueType* output )
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+					typename M::Vector4F	yV = M::loadFromMemory( inputY );
+
+					typename M::Vector4F	frequencyV = M::vectorizeOne( this->GetFrequency() );
+					typename M::Vector4F	lacunarityV = M::vectorizeOne( this->GetLacunarity() );
+					uint32					octaveCount = this->GetOctaveCount();
+					typename M::Vector4I	seedV = M::vectorizeOne( this->GetSeed() );
+					NoiseQuality			noiseQuality = this->GetNoiseQuality();
+					const ValueType*		spectralWeights = this->GetSpectralWeights();
+
+					typename M::Vector4F	valueV = M::constZeroF();
+					typename M::Vector4F	signalV = M::constZeroF();
+					typename M::Vector4F	weightV = M::constOneF();
+					typename M::Vector4F	nxV;
+					typename M::Vector4F	nyV;
+				
+					// These parameters should be user-defined; they may be exposed in a
+					// future version of libnoise.
+					typename M::Vector4F	offsetV = M::constOneF();
+					typename M::Vector4F	gainV = M::constTwoF();
+					
+					for( uint32 curOctave = 0; curOctave < octaveCount; curOctave++ ) 
+					{
+						// Make sure that these floating-point values have the same range as a 32-
+						// bit integer so that we can pass them to the coherent-noise functions.
+						//nx = M::MakeInt32Range( x );
+						nxV = xV;
+						nyV = yV;
+						
+						// Get the coherent-noise value from the input value and add it to the
+						// final result.
+						signalV = Noise::GradientCoherentNoise4( nxV, nyV, seedV, noiseQuality );
+
+						// Make the ridges.
+						signalV = M::abs( signalV );
+						signalV = M::subtract( offsetV, signalV );
+
+						// Square the signal to increase the sharpness of the ridges.
+						signalV = M::multiply( signalV, signalV );
+
+						// The weighting from the previous octave is applied to the signal.
+						// Larger values have higher weights, producing sharp points along the
+						// ridges.
+						signalV = M::multiply( signalV, weightV );
+
+						// Weight successive contributions by the previous signal.
+						weightV = M::multiply( signalV, gainV );
+
+						typename M::Vector4F	gtMaskV = M::greaterThan( weightV, M::constOneF() );
+						weightV = M::blend( weightV, M::constOneF(), M::castToInt( gtMaskV ) );
+
+						typename M::Vector4F	ltMaskV = M::lowerThan( weightV, M::constZeroF() );
+						weightV = M::blend( weightV, M::constZeroF(), M::castToInt( ltMaskV ) );
+						
+						// Add the signal to the output value.
+						valueV = M::add( valueV, M::multiply( signalV, M::vectorizeOne( spectralWeights[ curOctave ] ) ) );
+
+						// Prepare the next octave.
+						xV = M::multiply( xV, lacunarityV );
+						yV = M::multiply( yV, lacunarityV );
+						seedV = M::add( seedV, M::constOneI() );
+					}
+
+					valueV = M::subtract( M::multiply( valueV, M::vectorizeOne( ValueType( 1.25 ) ) ), M::constOneF() );
+					M::storeToMemory( output, valueV );
+				}
+
 			};
 
 			
@@ -272,7 +410,7 @@ namespace noise
 					NoiseQuality			noiseQuality = this->GetNoiseQuality();
 					const ValueType*		spectralWeights = this->GetSpectralWeights();
 					
-					typename M::Vector4F		coordV = M::vectorize( x, y );
+					typename M::Vector4F		coordV = M::vectorize( x, y, z );
 					typename M::Vector4F		frequencyV = M::vectorizeOne( frequency );
 					typename M::Vector4F		lacunarityV = M::vectorizeOne( lacunarity );
 
@@ -333,6 +471,81 @@ namespace noise
 
 					return (value * ValueType( 1.25 )) - ValueType( 1.0 );
 				}
+
+				void
+				GetValue4( const ValueType* inputX, const ValueType* inputY, const ValueType* inputZ, ValueType* output )
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+					typename M::Vector4F	yV = M::loadFromMemory( inputY );
+					typename M::Vector4F	zV = M::loadFromMemory( inputZ );
+
+					typename M::Vector4F	frequencyV = M::vectorizeOne( this->GetFrequency() );
+					typename M::Vector4F	lacunarityV = M::vectorizeOne( this->GetLacunarity() );
+					uint32					octaveCount = this->GetOctaveCount();
+					typename M::Vector4I	seedV = M::vectorizeOne( this->GetSeed() );
+					NoiseQuality			noiseQuality = this->GetNoiseQuality();
+					const ValueType*		spectralWeights = this->GetSpectralWeights();
+
+					typename M::Vector4F	valueV = M::constZeroF();
+					typename M::Vector4F	signalV = M::constZeroF();
+					typename M::Vector4F	weightV = M::constOneF();
+					typename M::Vector4F	nxV;
+					typename M::Vector4F	nyV;
+					typename M::Vector4F	nzV;
+
+					// These parameters should be user-defined; they may be exposed in a
+					// future version of libnoise.
+					typename M::Vector4F	offsetV = M::constOneF();
+					typename M::Vector4F	gainV = M::constTwoF();
+					
+					for( uint32 curOctave = 0; curOctave < octaveCount; curOctave++ ) 
+					{
+						// Make sure that these floating-point values have the same range as a 32-
+						// bit integer so that we can pass them to the coherent-noise functions.
+						//nx = M::MakeInt32Range( x );
+						nxV = xV;
+						nyV = yV;
+						nzV = zV;
+						
+						// Get the coherent-noise value from the input value and add it to the
+						// final result.
+						signalV = Noise::GradientCoherentNoise4( nxV, nyV, nzV, seedV, noiseQuality );
+
+						// Make the ridges.
+						signalV = M::abs( signalV );
+						signalV = M::subtract( offsetV, signalV );
+
+						// Square the signal to increase the sharpness of the ridges.
+						signalV = M::multiply( signalV, signalV );
+
+						// The weighting from the previous octave is applied to the signal.
+						// Larger values have higher weights, producing sharp points along the
+						// ridges.
+						signalV = M::multiply( signalV, weightV );
+
+						// Weight successive contributions by the previous signal.
+						weightV = M::multiply( signalV, gainV );
+
+						typename M::Vector4F	gtMaskV = M::greaterThan( weightV, M::constOneF() );
+						weightV = M::blend( weightV, M::constOneF(), M::castToInt( gtMaskV ) );
+
+						typename M::Vector4F	ltMaskV = M::lowerThan( weightV, M::constZeroF() );
+						weightV = M::blend( weightV, M::constZeroF(), M::castToInt( ltMaskV ) );
+						
+						// Add the signal to the output value.
+						valueV = M::add( valueV, M::multiply( signalV, M::vectorizeOne( spectralWeights[ curOctave ] ) ) );
+
+						// Prepare the next octave.
+						xV = M::multiply( xV, lacunarityV );
+						yV = M::multiply( yV, lacunarityV );
+						zV = M::multiply( zV, lacunarityV );
+						seedV = M::add( seedV, M::constOneI() );
+					}
+
+					valueV = M::subtract( M::multiply( valueV, M::vectorizeOne( ValueType( 1.25 ) ) ), M::constOneF() );
+					M::storeToMemory( output, valueV );
+				}
+
 			};
 			
 			
@@ -374,7 +587,7 @@ namespace noise
 					NoiseQuality			noiseQuality = this->GetNoiseQuality();
 					const ValueType*		spectralWeights = this->GetSpectralWeights();
 					
-					typename M::Vector4F		coordV = M::vectorize( x, y );
+					typename M::Vector4F		coordV = M::vectorize( x, y, z, w );
 					typename M::Vector4F		frequencyV = M::vectorizeOne( frequency );
 					typename M::Vector4F		lacunarityV = M::vectorizeOne( lacunarity );
 
@@ -435,6 +648,85 @@ namespace noise
 					}
 
 					return (value * ValueType( 1.25 )) - ValueType( 1.0 );
+				}
+
+				void
+				GetValue4( const ValueType* inputX, const ValueType* inputY, const ValueType* inputZ, const ValueType* inputW,
+						   ValueType* output )
+				{
+					typename M::Vector4F	xV = M::loadFromMemory( inputX );
+					typename M::Vector4F	yV = M::loadFromMemory( inputY );
+					typename M::Vector4F	zV = M::loadFromMemory( inputZ );
+					typename M::Vector4F	wV = M::loadFromMemory( inputW );
+
+					typename M::Vector4F	frequencyV = M::vectorizeOne( this->GetFrequency() );
+					typename M::Vector4F	lacunarityV = M::vectorizeOne( this->GetLacunarity() );
+					uint32					octaveCount = this->GetOctaveCount();
+					typename M::Vector4I	seedV = M::vectorizeOne( this->GetSeed() );
+					NoiseQuality			noiseQuality = this->GetNoiseQuality();
+					const ValueType*		spectralWeights = this->GetSpectralWeights();
+
+					typename M::Vector4F	valueV = M::constZeroF();
+					typename M::Vector4F	signalV = M::constZeroF();
+					typename M::Vector4F	weightV = M::constOneF();
+					typename M::Vector4F	nxV;
+					typename M::Vector4F	nyV;
+					typename M::Vector4F	nzV;
+					typename M::Vector4F	nwV;
+
+					// These parameters should be user-defined; they may be exposed in a
+					// future version of libnoise.
+					typename M::Vector4F	offsetV = M::constOneF();
+					typename M::Vector4F	gainV = M::constTwoF();
+					
+					for( uint32 curOctave = 0; curOctave < octaveCount; curOctave++ ) 
+					{
+						// Make sure that these floating-point values have the same range as a 32-
+						// bit integer so that we can pass them to the coherent-noise functions.
+						//nx = M::MakeInt32Range( x );
+						nxV = xV;
+						nyV = yV;
+						nzV = zV;
+						nwV = wV;
+						
+						// Get the coherent-noise value from the input value and add it to the
+						// final result.
+						signalV = Noise::GradientCoherentNoise4( nxV, nyV, nzV, nwV, seedV, noiseQuality );
+
+						// Make the ridges.
+						signalV = M::abs( signalV );
+						signalV = M::subtract( offsetV, signalV );
+
+						// Square the signal to increase the sharpness of the ridges.
+						signalV = M::multiply( signalV, signalV );
+
+						// The weighting from the previous octave is applied to the signal.
+						// Larger values have higher weights, producing sharp points along the
+						// ridges.
+						signalV = M::multiply( signalV, weightV );
+
+						// Weight successive contributions by the previous signal.
+						weightV = M::multiply( signalV, gainV );
+
+						typename M::Vector4F	gtMaskV = M::greaterThan( weightV, M::constOneF() );
+						weightV = M::blend( weightV, M::constOneF(), M::castToInt( gtMaskV ) );
+
+						typename M::Vector4F	ltMaskV = M::lowerThan( weightV, M::constZeroF() );
+						weightV = M::blend( weightV, M::constZeroF(), M::castToInt( ltMaskV ) );
+						
+						// Add the signal to the output value.
+						valueV = M::add( valueV, M::multiply( signalV, M::vectorizeOne( spectralWeights[ curOctave ] ) ) );
+
+						// Prepare the next octave.
+						xV = M::multiply( xV, lacunarityV );
+						yV = M::multiply( yV, lacunarityV );
+						zV = M::multiply( zV, lacunarityV );
+						wV = M::multiply( wV, lacunarityV );
+						seedV = M::add( seedV, M::constOneI() );
+					}
+
+					valueV = M::subtract( M::multiply( valueV, M::vectorizeOne( ValueType( 1.25 ) ) ), M::constOneF() );
+					M::storeToMemory( output, valueV );
 				}
 
 			};

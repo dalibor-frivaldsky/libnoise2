@@ -228,6 +228,16 @@ namespace noise
 				return add( tmp1, tmp2 );
 			}
 
+			static inline
+			Vector4F
+			abs( const Vector4F& v )
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( int32, invSignMaskA, ~0x80000000 );
+				Vector4F	invSignMaskV = loadFromMemory( (ScalarF*) invSignMaskA );
+
+				return _mm_and_ps( v, invSignMaskV );
+			}
+
 			// Comparison
 			static inline
 			Vector4F
