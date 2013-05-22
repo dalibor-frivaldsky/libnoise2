@@ -210,7 +210,7 @@ namespace noise
 				void
 				SetOctaveCount( uint32 octaveCount )
 				{
-					if( octaveCount < 1 || octaveCount > Defaults::OctaveCountMax )
+					if( octaveCount < 1 || octaveCount > Defaults::OctaveCountMax() )
 					{
 						// TODO throw exception
 					}

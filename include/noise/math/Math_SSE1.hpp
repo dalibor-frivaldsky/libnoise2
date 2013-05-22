@@ -238,6 +238,13 @@ namespace noise
 				return _mm_and_ps( v, invSignMaskV );
 			}
 
+			static inline
+			Vector4F
+			sqrtRecip( const Vector4F& v )
+			{
+				return _mm_sqrt_ps( v );
+			}
+
 			// Comparison
 			static inline
 			Vector4F
@@ -251,6 +258,13 @@ namespace noise
 			greaterThan( const Vector4F& l, const Vector4F& r )
 			{
 				return _mm_cmpgt_ps( l, r );
+			}
+
+			static inline
+			Vector4F
+			equalGreaterThan( const Vector4F& l, const Vector4F& r )
+			{
+				return _mm_cmpge_ps( l, r );
 			}
 
 			static inline

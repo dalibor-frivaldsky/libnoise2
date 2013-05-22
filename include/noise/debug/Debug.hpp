@@ -2,6 +2,7 @@
 
 
 #include <iostream>
+#include <bitset>
 
 
 #include <xmmintrin.h>
@@ -51,6 +52,30 @@ namespace noise
 			std::cout << ", " << ((unsigned int*)&v)[ 1 ];
 			std::cout << ", " << ((unsigned int*)&v)[ 2 ];
 			std::cout << ", " << ((unsigned int*)&v)[ 3 ];
+			std::cout << std::endl;
+		}
+
+		static inline
+		void
+		printVectorInt( const math::Math_SSE2_Integer< float >::Vector4I& v )
+		{
+			std::cout << "v = ";
+			std::cout << ((int*)&v)[ 0 ];
+			std::cout << ", " << ((int*)&v)[ 1 ];
+			std::cout << ", " << ((int*)&v)[ 2 ];
+			std::cout << ", " << ((int*)&v)[ 3 ];
+			std::cout << std::endl;
+		}
+
+		static inline
+		void
+		printVectorBin( const math::Math_SSE2_Integer< float >::Vector4I& v )
+		{
+			std::cout << "v = ";
+			std::cout << std::bitset< 32 >( ((unsigned int*)&v)[ 0 ] );
+			std::cout << ", " << ((int*)&v)[ 1 ];
+			std::cout << ", " << ((int*)&v)[ 2 ];
+			std::cout << ", " << ((int*)&v)[ 3 ];
 			std::cout << std::endl;
 		}
 

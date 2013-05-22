@@ -1218,6 +1218,18 @@ namespace noise
 				return bitAnd( v, invSignMaskV );
 			}
 
+			static inline
+			Vector4F
+			sqrtRecip( const Vector4F& v )
+			{
+				// No reciprocal square root for packed double in SSE2
+				Vector4F	r;
+				r.lo = _mm_sqrt_pd( v.lo );
+				r.hi = _mm_sqrt_pd( v.hi );
+				return r;
+			}
+
+
 			// Comparison
 			using Math_SSE2_Integer< double >::equal;
 			using Math_SSE2_Integer< double >::greaterThan;
@@ -1239,6 +1251,16 @@ namespace noise
 				Vector4F	v;
 				v.lo = _mm_cmpgt_pd( l.lo, r.lo );
 				v.hi = _mm_cmpgt_pd( l.hi, r.hi );
+				return v;
+			}
+
+			static inline
+			Vector4F
+			equalGreaterThan( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_cmpge_pd( l.lo, r.lo );
+				v.hi = _mm_cmpge_pd( l.hi, r.hi );
 				return v;
 			}
 

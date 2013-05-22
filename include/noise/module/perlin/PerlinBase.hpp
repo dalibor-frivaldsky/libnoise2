@@ -218,14 +218,14 @@ namespace noise
 					this->lacunarity = lacunarity;
 				}
 				
-				int
+				uint32
 				GetOctaveCount() const
 				{
 					return this->octaveCount;
 				}
 				
 				void
-				SetOctaveCount( int octaveCount )
+				SetOctaveCount( uint32 octaveCount )
 				{
 					if( octaveCount < 1 || octaveCount > Defaults::OctaveCountMax() )
 					{
@@ -247,14 +247,14 @@ namespace noise
 					this->persistence = persistence;
 				}
 				
-				int
+				uint32
 				GetSeed() const
 				{
 					return this->seed;
 				}
 				
 				void
-				SetSeed( int seed )
+				SetSeed( uint32 seed )
 				{
 					this->seed = seed;
 				}
@@ -277,10 +277,10 @@ namespace noise
 				
 				ValueType			frequency;
 				ValueType			lacunarity;
-				uint32					octaveCount;
+				uint32				octaveCount;
 				ValueType			persistence;
 				NoiseQuality		noiseQuality;
-				uint32					seed;
+				uint32				seed;
 			};
 
 		}

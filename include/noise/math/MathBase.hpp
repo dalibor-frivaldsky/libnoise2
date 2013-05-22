@@ -43,7 +43,7 @@ namespace noise
 			ScalarF
 			floor( ScalarF x )
 			{
-				return ( x > ScalarF( 0.0 ) ? ScalarF( int( x ) ): ScalarF( int( x - 1 ) ) );
+				return ( x >= ScalarF( 0.0 ) ? ScalarF( int( x ) ): ScalarF( int( x - 1 ) ) );
 			}
 
 			static inline

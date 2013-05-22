@@ -69,9 +69,9 @@ namespace noise
 					int32			j = int( intY );
 					ValueType	noise = ValueType( 0.0 );
 
-					for( int32 di = -1; di <= +1; ++di )
+					for( int32 di = 0; di <= 0; ++di )
 					{
-						for( int32 dj = -1; dj <= +1; ++dj )
+						for( int32 dj = 0; dj <= 0; ++dj )
 						{
 							noise += cell( i + di, j + dj, fracX - di, fracY - dj );
 						}
