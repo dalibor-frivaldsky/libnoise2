@@ -99,7 +99,7 @@ namespace noise
 			Vector4F
 			constPiF()
 			{
-				LIBNOISE2_SUPPORT_CONST_ARRAY( float, piA, 3.14159265358979323846 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, piA, 3.14159265358979323846f );
 				return loadFromMemory( piA );
 			}
 
@@ -107,7 +107,7 @@ namespace noise
 			Vector4F
 			constMinusPiF()
 			{
-				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minusPiA, -3.14159265358979323846 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, minusPiA, -3.14159265358979323846f );
 				return loadFromMemory( minusPiA );
 			}
 

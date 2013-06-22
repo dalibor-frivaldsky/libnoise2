@@ -1578,7 +1578,6 @@ namespace noise
 				Vector4F	x = v;
 				Vector4F	tmp = constZeroF();
 				Vector4F	fx;
-				Vector4I	emm0i;
 				__m128i		emm0iLo;
 				__m128i		emm0iHi;
 				Vector4F	one = constOneF();
