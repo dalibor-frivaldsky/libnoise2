@@ -291,16 +291,14 @@ namespace noise
 					indexBaseV = seedV;
 					calculateNoisePart< Shuffle_0_3 >( x0y0x1y1, indexBaseV, ix0x1y0y1, n );
 
-					typename M::Vector4F		n1 = M::template shuffle< 0, 0, 1, 1 >( n, n );
-					typename M::Vector4F		n2 = M::template shuffle< 2, 2, 3, 3 >( n, n );
-
+					typename M::Vector4F		n1 = M::template shuffle< 2, 3, 0, 1 >( n, n );
+					
 					interpV = M::distribute1st( sCoordV );
-					typename M::Vector4F		nx = Interp::LinearInterpV( n1, n2, interpV );
-					typename M::Vector4F		nx1 = M::template shuffle< 0, 0, 0, 0 >( nx, nx );
-					typename M::Vector4F		nx2 = M::template shuffle< 2, 2, 2, 2 >( nx, nx );
-
+					typename M::Vector4F		nx = Interp::LinearInterpV( n, n1, interpV );
+					typename M::Vector4F		nx1 = M::template shuffle< 1, 0, 1, 0 >( nx, nx );
+					
 					interpV = M::distribute2nd( sCoordV );
-					typename M::Vector4F		ny = Interp::LinearInterpV( nx1, nx2, interpV );
+					typename M::Vector4F		ny = Interp::LinearInterpV( nx, nx1, interpV );
 
 					return M::extract1st( ny );
 				}
@@ -582,16 +580,14 @@ namespace noise
 
 					interpV = M::distribute1st( sCoordV );
 					typename M::Vector4F		nx = Interp::LinearInterpV( n1, n2, interpV );
-					typename M::Vector4F		nx1 = M::template shuffle< 0, 0, 1, 1 >( nx, nx );
-					typename M::Vector4F		nx2 = M::template shuffle< 2, 2, 3, 3 >( nx, nx );
-
+					typename M::Vector4F		nx1 = M::template shuffle< 2, 3, 0, 1 >( nx, nx );
+					
 					interpV = M::distribute2nd( sCoordV );
-					typename M::Vector4F		ny = Interp::LinearInterpV( nx1, nx2, interpV );
-					typename M::Vector4F		ny1 = M::template shuffle< 0, 0, 0, 0 >( ny, ny );
-					typename M::Vector4F		ny2 = M::template shuffle< 2, 2, 2, 2 >( ny, ny );
-
+					typename M::Vector4F		ny = Interp::LinearInterpV( nx, nx1, interpV );
+					typename M::Vector4F		ny1 = M::template shuffle< 1, 0, 1, 0 >( ny, ny );
+					
 					interpV = M::distribute3rd( sCoordV );
-					typename M::Vector4F		nz = Interp::LinearInterpV( ny1, ny2, interpV );
+					typename M::Vector4F		nz = Interp::LinearInterpV( ny, ny1, interpV );
 
 					return M::extract1st( nz );
 				}
@@ -910,16 +906,14 @@ namespace noise
 
 					interpV = M::distribute2nd( sCoordV );
 					typename M::Vector4F		ny = Interp::LinearInterpV( nx1, nx2, interpV );
-					typename M::Vector4F		ny1 = M::template shuffle< 0, 0, 1, 1 >( ny, ny );
-					typename M::Vector4F		ny2 = M::template shuffle< 2, 2, 3, 3 >( ny, ny );
-
+					typename M::Vector4F		ny1 = M::template shuffle< 2, 3, 0, 1 >( ny, ny );
+					
 					interpV = M::distribute3rd( sCoordV );
-					typename M::Vector4F		nz = Interp::LinearInterpV( ny1, ny2, interpV );
-					typename M::Vector4F		nz1 = M::template shuffle< 0, 0, 0, 0 >( nz, nz );
-					typename M::Vector4F		nz2 = M::template shuffle< 2, 2, 2, 2 >( nz, nz );
-
+					typename M::Vector4F		nz = Interp::LinearInterpV( ny, ny1, interpV );
+					typename M::Vector4F		nz1 = M::template shuffle< 1, 0, 1, 0 >( nz, nz );
+					
 					interpV = M::distribute4th( sCoordV );
-					typename M::Vector4F		nw = Interp::LinearInterpV( nz1, nz2, interpV );
+					typename M::Vector4F		nw = Interp::LinearInterpV( nz, nz1, interpV );
 
 					return M::extract1st( nw );
 				}
