@@ -623,6 +623,27 @@ namespace noise
 				return shiftRightLogical( v, 31 );
 			}
 
+			static inline
+			Vector4F
+			makeInt32Range( const Vector4F& input )
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, lowerBoundA, -1073741824.0f );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( float, upperBoundA,  1073741824.0f );
+
+				Vector4F	lowerMask = equalLowerThan( input, loadFromMemory( lowerBoundA ) );
+				Vector4F	upperMask = equalGreaterThan( input, loadFromMemory( upperBoundA ) );
+				Vector4I	combinedMask = bitOr( _mm_castps_si128( lowerMask ), _mm_castps_si128( upperMask ) );
+
+				if( isAllZeros( combinedMask ) == true )
+				{
+					return input;
+				}
+				else
+				{
+					return constZeroF();
+				}
+			}
+
 
 			// Exponential
 			static inline
@@ -1274,6 +1295,16 @@ namespace noise
 				return v;
 			}
 
+			static inline
+			Vector4F
+			equalLowerThan( const Vector4F& l, const Vector4F& r )
+			{
+				Vector4F	v;
+				v.lo = _mm_cmple_pd( l.lo, r.lo );
+				v.hi = _mm_cmple_pd( l.hi, r.hi );
+				return v;
+			}
+
 
 			// MinMax
 			static inline
@@ -1549,6 +1580,28 @@ namespace noise
 				signHi = shuffle< 1, 3, 0, 2 >( signHi );
 
 				return add( signLo, signHi );
+			}
+
+			static inline
+			Vector4F
+			makeInt32Range( const Vector4F& input )
+			{
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, lowerBoundA, -1073741824.0 );
+				LIBNOISE2_SUPPORT_CONST_ARRAY( double, upperBoundA,  1073741824.0 );
+
+				Vector4F	lowerMask = equalLowerThan( input, loadFromMemory( lowerBoundA ) );
+				Vector4F	upperMask = equalGreaterThan( input, loadFromMemory( upperBoundA ) );
+				Vector4F	combinedMask = bitOr( lowerMask, upperMask );
+
+				if( isAllZeros( _mm_castpd_si128( combinedMask.lo ) ) == true &&
+					isAllZeros( _mm_castpd_si128( combinedMask.hi ) ) == true )
+				{
+					return input;
+				}
+				else
+				{
+					return constZeroF();
+				}
 			}
 
 

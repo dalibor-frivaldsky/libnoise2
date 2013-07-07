@@ -180,11 +180,12 @@ namespace noise
 						// bit integer so that we can pass them to the coherent-noise functions.
 						/*nx = M::MakeInt32Range( x );
 						ny = M::MakeInt32Range( y );*/
+						typename M::Vector4F	nCoordV = M::makeInt32Range( coordV );
 						
 						// Get the coherent-noise value from the input value and add it to the
 						// final result.
 						octaveSeed = (seed + curOctave) & 0xffffffff;
-						signal = Noise::GradientCoherentNoise( coordV, octaveSeed, noiseQuality );
+						signal = Noise::GradientCoherentNoise( nCoordV, octaveSeed, noiseQuality );
 						value += signal * curPersistence;
 
 						// Prepare the next octave.
@@ -296,11 +297,12 @@ namespace noise
 						/*nx = M::MakeInt32Range( x );
 						ny = M::MakeInt32Range( y );
 						nz = M::MakeInt32Range( z );*/
+						typename M::Vector4F	nCoordV = M::makeInt32Range( coordV );
 
 						// Get the coherent-noise value from the input value and add it to the
 						// final result.
 						octaveSeed = (seed + curOctave) & 0xffffffff;
-						signal = Noise::GradientCoherentNoise( coordV, octaveSeed, noiseQuality );
+						signal = Noise::GradientCoherentNoise( nCoordV, octaveSeed, noiseQuality );
 						value += signal * curPersistence;
 
 						// Prepare the next octave.
@@ -417,11 +419,12 @@ namespace noise
 						ny = M::MakeInt32Range( y );
 						nz = M::MakeInt32Range( z );
 						nw = M::MakeInt32Range( w );*/
+						typename M::Vector4F	nCoordV = M::makeInt32Range( coordV );
 
 						// Get the coherent-noise value from the input value and add it to the
 						// final result.
 						octaveSeed = (seed + curOctave) & 0xffffffff;
-						signal = Noise::GradientCoherentNoise( coordV, octaveSeed, noiseQuality );
+						signal = Noise::GradientCoherentNoise( nCoordV, octaveSeed, noiseQuality );
 						value += signal * curPersistence;
 
 						// Prepare the next octave.

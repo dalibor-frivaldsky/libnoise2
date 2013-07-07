@@ -274,6 +274,13 @@ namespace noise
 				return _mm_cmplt_ps( l, r );
 			}
 
+			static inline
+			Vector4F
+			equalLowerThan( const Vector4F& l, const Vector4F& r )
+			{
+				return _mm_cmple_ps( l, r );
+			}
+
 
 			// Shift operations
 			static inline
