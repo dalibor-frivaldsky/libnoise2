@@ -105,8 +105,7 @@ namespace noise
 					{
 						// Make sure that these floating-point values have the same range as a 32-
 						// bit integer so that we can pass them to the coherent-noise functions.
-						//nx = M::MakeInt32Range( x );
-						nxV = xV;
+						nxV = M::makeInt32Range( xV );
 						
 						// Get the coherent-noise value from the input value and add it to the
 						// final result.
@@ -178,8 +177,6 @@ namespace noise
 					{
 						// Make sure that these floating-point values have the same range as a 32-
 						// bit integer so that we can pass them to the coherent-noise functions.
-						/*nx = M::MakeInt32Range( x );
-						ny = M::MakeInt32Range( y );*/
 						typename M::Vector4F	nCoordV = M::makeInt32Range( coordV );
 						
 						// Get the coherent-noise value from the input value and add it to the
@@ -219,9 +216,8 @@ namespace noise
 					{
 						// Make sure that these floating-point values have the same range as a 32-
 						// bit integer so that we can pass them to the coherent-noise functions.
-						//nx = M::MakeInt32Range( x );
-						nxV = xV;
-						nyV = yV;
+						nxV = M::makeInt32Range( xV );
+						nyV = M::makeInt32Range( yV );
 						
 						// Get the coherent-noise value from the input value and add it to the
 						// final result.
@@ -294,9 +290,6 @@ namespace noise
 					{
 						// Make sure that these floating-point values have the same range as a 32-
 						// bit integer so that we can pass them to the coherent-noise functions.
-						/*nx = M::MakeInt32Range( x );
-						ny = M::MakeInt32Range( y );
-						nz = M::MakeInt32Range( z );*/
 						typename M::Vector4F	nCoordV = M::makeInt32Range( coordV );
 
 						// Get the coherent-noise value from the input value and add it to the
@@ -338,10 +331,9 @@ namespace noise
 					{
 						// Make sure that these floating-point values have the same range as a 32-
 						// bit integer so that we can pass them to the coherent-noise functions.
-						//nx = M::MakeInt32Range( x );
-						nxV = xV;
-						nyV = yV;
-						nzV = zV;
+						nxV = M::makeInt32Range( xV );
+						nyV = M::makeInt32Range( yV );
+						nzV = M::makeInt32Range( zV );
 						
 						// Get the coherent-noise value from the input value and add it to the
 						// final result.
@@ -415,10 +407,6 @@ namespace noise
 					{
 						// Make sure that these floating-point values have the same range as a 32-
 						// bit integer so that we can pass them to the coherent-noise functions.
-						/*nx = M::MakeInt32Range( x );
-						ny = M::MakeInt32Range( y );
-						nz = M::MakeInt32Range( z );
-						nw = M::MakeInt32Range( w );*/
 						typename M::Vector4F	nCoordV = M::makeInt32Range( coordV );
 
 						// Get the coherent-noise value from the input value and add it to the
@@ -463,11 +451,10 @@ namespace noise
 					{
 						// Make sure that these floating-point values have the same range as a 32-
 						// bit integer so that we can pass them to the coherent-noise functions.
-						//nx = M::MakeInt32Range( x );
-						nxV = xV;
-						nyV = yV;
-						nzV = zV;
-						nwV = wV;
+						nxV = M::makeInt32Range( xV );
+						nyV = M::makeInt32Range( yV );
+						nzV = M::makeInt32Range( zV );
+						nwV = M::makeInt32Range( wV );
 						
 						// Get the coherent-noise value from the input value and add it to the
 						// final result.
