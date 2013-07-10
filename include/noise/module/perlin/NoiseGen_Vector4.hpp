@@ -196,13 +196,17 @@ namespace noise
 					VECTOR4_ALIGN( uint32	vectorIndexA[ 4 ] );
 					M::storeToMemory( vectorIndexA, vectorIndexV );
 
-					VECTOR4_ALIGN( ValueType	xvGradientA[ 4 ] );
+					/*VECTOR4_ALIGN( ValueType	xvGradientA[ 4 ] );
 					for( uint8 i = 0; i < 4; ++i )
 					{
 						xvGradientA[ i ] = Table::values()[ vectorIndexA[ i ] ];
-					}
-					
-					typename M::Vector4F	xvGradientV = M::loadFromMemory( xvGradientA );
+					}*/
+
+					typename M::Vector4F	gx1x2____ = M::interleaveLo( M::loadFromMemory( Table::values() + vectorIndexA[ 0 ] ),
+																		 M::loadFromMemory( Table::values() + vectorIndexA[ 1 ] ) );
+					typename M::Vector4F	gx3x4____ = M::interleaveLo( M::loadFromMemory( Table::values() + vectorIndexA[ 2 ] ),
+																		 M::loadFromMemory( Table::values() + vectorIndexA[ 3 ] ) );
+					typename M::Vector4F	xvGradientV = M::template shuffle< 0, 1, 0, 1 >( gx1x2____, gx3x4____ );
 					typename M::Vector4F	xvPointV = M::subtract( fxV, M::intToFloat( ixV ) );
 
 					return M::multiply( M::multiply( xvGradientV, xvPointV ), M::vectorizeOne( ValueType( 2.12 ) ) );
