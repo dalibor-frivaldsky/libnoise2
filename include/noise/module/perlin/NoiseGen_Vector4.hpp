@@ -196,12 +196,6 @@ namespace noise
 					VECTOR4_ALIGN( uint32	vectorIndexA[ 4 ] );
 					M::storeToMemory( vectorIndexA, vectorIndexV );
 
-					/*VECTOR4_ALIGN( ValueType	xvGradientA[ 4 ] );
-					for( uint8 i = 0; i < 4; ++i )
-					{
-						xvGradientA[ i ] = Table::values()[ vectorIndexA[ i ] ];
-					}*/
-
 					typename M::Vector4F	gx1x2____ = M::interleaveLo( M::loadFromMemory( Table::values() + vectorIndexA[ 0 ] ),
 																		 M::loadFromMemory( Table::values() + vectorIndexA[ 1 ] ) );
 					typename M::Vector4F	gx3x4____ = M::interleaveLo( M::loadFromMemory( Table::values() + vectorIndexA[ 2 ] ),
@@ -468,16 +462,6 @@ namespace noise
 
 					VECTOR4_ALIGN( uint32	vectorIndexA[ 4 ] );
 					M::storeToMemory( vectorIndexA, vectorIndexV );
-
-					/*VECTOR4_ALIGN( ValueType	xvGradientA[ 4 ] );
-					VECTOR4_ALIGN( ValueType	yvGradientA[ 4 ] );
-					for( uint8 i = 0; i < 4; ++i )
-					{
-						xvGradientA[ i ] = Table::values()[ vectorIndexA[ i ] ];
-						yvGradientA[ i ] = Table::values()[ vectorIndexA[ i ] + 1 ];
-					}
-					typename M::Vector4F	xvGradientV = M::loadFromMemory( xvGradientA );
-					typename M::Vector4F	yvGradientV = M::loadFromMemory( yvGradientA );*/
 
 					typename M::Vector4F	gx1x2y1y2 = M::interleaveLo( M::loadFromMemory( Table::values() + vectorIndexA[ 0 ] ),
 																		 M::loadFromMemory( Table::values() + vectorIndexA[ 1 ] ) );

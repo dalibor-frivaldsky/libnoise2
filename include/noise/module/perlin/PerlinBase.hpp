@@ -86,7 +86,7 @@ namespace noise
 				{
 					return 
 
-					QUALITY_STD;
+					QUALITY_BEST;
 				}
 
 				/// Default noise seed for the noise::module::Perlin noise module.
@@ -150,7 +150,7 @@ namespace noise
 				NoiseQuality
 				Quality()
 				{
-					return QUALITY_STD;
+					return QUALITY_BEST;
 				}
 
 				/// Default noise seed for the noise::module::Perlin noise module.
