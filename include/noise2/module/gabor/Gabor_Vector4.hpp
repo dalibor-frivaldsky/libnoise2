@@ -17,7 +17,7 @@
 
 
 
-namespace noise
+namespace noise2
 {
 
 	namespace module
