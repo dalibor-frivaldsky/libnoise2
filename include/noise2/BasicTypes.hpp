@@ -9,6 +9,9 @@ namespace noise2
 	/// Unsigned integer type.
 	typedef unsigned int uint;
 
+	/// 64-bit unsigned integer type
+	typedef unsigned long long uint64;
+
 	/// 32-bit unsigned integer type.
 	typedef unsigned int uint32;
 

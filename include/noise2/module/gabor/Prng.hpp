@@ -6,6 +6,7 @@
 
 
 #include <noise2/BasicTypes.hpp>
+#include <noise2/math/Math.hpp>
 
 
 
@@ -22,6 +23,12 @@ namespace noise2
 			template< typename ValueType >
 			class Prng
 			{
+
+			private:
+
+				typedef math::Math< ValueType >		M;
+
+
 
 			private:
 
@@ -84,7 +91,7 @@ namespace noise2
 				uint32
 				poisson( ValueType mean )
 				{
-					ValueType	g = std::exp( -mean );
+					ValueType	g = M::exp( -mean );
 					uint32		em = 0;
 					ValueType	t = uniformNormalized();
 

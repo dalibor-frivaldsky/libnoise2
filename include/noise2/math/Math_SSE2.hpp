@@ -646,6 +646,10 @@ namespace noise2
 
 
 			// Exponential
+			using Math_SSE2_Integer< float >::exp;
+			using Math_SSE2_Integer< float >::cos;
+			using Math_SSE2_Integer< float >::sinCos;
+
 			static inline
 			Vector4F
 			exp( const Vector4F& v )
@@ -805,7 +809,7 @@ namespace noise2
 
 				/* select the correct result from the two polynoms */  
 				xmm3 = polyMask;
-				y2 = _mm_and_ps( xmm3, y2 ); //, xmm3);
+				y2 = _mm_and_ps( xmm3, y2 );
 				y = _mm_andnot_ps( xmm3, y );
 				y = _mm_add_ps( y, y2 );
 				/* update the sign */
@@ -1608,6 +1612,10 @@ namespace noise2
 			// Exponential
 			// TODO practically copied from single precision exp. Cephes implementation for double
 			// seems to be different
+			using Math_SSE2_Integer< double >::exp;
+			using Math_SSE2_Integer< double >::cos;
+			using Math_SSE2_Integer< double >::sinCos;
+
 			static inline
 			Vector4F
 			exp( const Vector4F& v )

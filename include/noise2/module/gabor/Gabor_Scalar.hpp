@@ -88,8 +88,11 @@ namespace noise2
 				ValueType
 				gabor( float K, float a, float F0, float omega0, float x, float y ) const
 				{
-					ValueType	gaussianEnvelop = K * std::exp( -M::Pi() * (a * a) * ((x * x) + (y * y)) );
-					ValueType	sinusoidalCarrier = std::cos( ValueType( 2.0 ) * M::Pi() * F0 * ((x * std::cos( omega0 )) + (y * std::sin( omega0 ))) );
+					ValueType	gaussianEnvelop = K * M::exp( -M::Pi() * (a * a) * ((x * x) + (y * y)) );
+					ValueType	omega0Sin;
+					ValueType	omega0Cos;
+					M::sinCos( omega0, omega0Sin, omega0Cos );
+					ValueType	sinusoidalCarrier = M::cos( ValueType( 2.0 ) * M::Pi() * F0 * ((x * omega0Cos) + (y * omega0Sin)) );
 					return gaussianEnvelop * sinusoidalCarrier;
 				}
 
@@ -150,7 +153,7 @@ namespace noise2
 					ValueType	F0 = this->GetF0();
 					ValueType	impulseDensity = this->GetImpulseDensity();
 
-					ValueType	integralGaborFilterSquared = ((K * K) / (ValueType( 4.0 ) * a * a)) * (ValueType( 1.0 ) + std::exp( -(ValueType( 2.0 ) * M::Pi() * F0 * F0) / (a * a) ));
+					ValueType	integralGaborFilterSquared = ((K * K) / (ValueType( 4.0 ) * a * a)) * (ValueType( 1.0 ) + M::exp( -(ValueType( 2.0 ) * M::Pi() * F0 * F0) / (a * a) ));
 					return impulseDensity * (ValueType( 1.0 ) / ValueType( 3.0 )) * integralGaborFilterSquared;
 				}
 
