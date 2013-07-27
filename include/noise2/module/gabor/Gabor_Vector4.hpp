@@ -75,8 +75,44 @@ namespace noise2
 					typename M::Vector4F	fracXV = M::vectorizeOne( x - intX );
 					typename M::Vector4F	fracYV = M::vectorizeOne( y - intY );
 
-					static VECTOR4_ALIGN( int32		diA[ 9 ] ) = { -1, -1, -1, 0, 0, 0, 1, 1, 1 };
-					static VECTOR4_ALIGN( int32		djA[ 9 ] ) = { -1, 0, 1, -1, 0, 1, 0, 1, -1 };
+					int*	diA;
+					int*	djA;
+
+					static VECTOR4_ALIGN( int		diA_LL[ 9 ] ) = { 0, -1, 0, -1, 1, 1, 0, -1, 1 };
+					static VECTOR4_ALIGN( int		djA_LL[ 9 ] ) = { 0, -1, -1, 0, 0, -1, 1, 1, 1 };
+					static VECTOR4_ALIGN( int		diA_UR[ 9 ] ) = { 0, 1, 0, 1, 0, 1, -1, -1, -1 };
+					static VECTOR4_ALIGN( int		djA_UR[ 9 ] ) = { 0, 1, 1, 0, -1, -1, 0, 1, -1 };
+					static VECTOR4_ALIGN( int		diA_UL[ 9 ] ) = { 0, -1, -1, 0, 1, 1, 0, -1, 1 };
+					static VECTOR4_ALIGN( int		djA_UL[ 9 ] ) = { 0, 1, 0, 1, 0, 1, -1, -1, -1 };
+					static VECTOR4_ALIGN( int		diA_LR[ 9 ] ) = { 0, 1, 0, 1, 0, 1, -1, -1, -1 };
+					static VECTOR4_ALIGN( int		djA_LR[ 9 ] ) = { 0, -1, -1, 0, 1, 1, 0, -1, 1 };
+
+					if( fracX < ValueType( 0.5 ) )
+					{
+						if( fracY < ValueType( 0.5 ) )
+						{
+							diA = diA_LL;
+							djA = djA_LL;
+						}
+						else
+						{
+							diA = diA_UL;
+							djA = djA_UL;
+						}
+					}
+					else
+					{
+						if( fracY < ValueType( 0.5 ) )
+						{
+							diA = diA_LR;
+							djA = djA_LR;
+						}
+						else
+						{
+							diA = diA_UR;
+							djA = djA_UR;
+						}
+					}
 
 					typename M::Vector4I		iV = M::vectorizeOne( i );
 					typename M::Vector4I		jV = M::vectorizeOne( j );
