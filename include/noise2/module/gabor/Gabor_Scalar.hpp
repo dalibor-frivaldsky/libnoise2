@@ -58,26 +58,32 @@ namespace noise2
 				ValueType
 				GetValue( ValueType x, ValueType y ) const
 				{
-					x /= this->GetKernelRadius();
-					y /= this->GetKernelRadius();
-
-					ValueType	intX = M::floor( x );
-					ValueType	intY = M::floor( y );
-					ValueType	fracX = x - intX;
-					ValueType	fracY = y - intY;
-					int32			i = int( intX );
-					int32			j = int( intY );
 					ValueType	noise = ValueType( 0.0 );
 
-					for( int32 di = -1; di <= 1; ++di )
+					for( size_t w = 0; w < this->preparedWidgets.size(); ++w )
 					{
-						for( int32 dj = -1; dj <= 1; ++dj )
+						const typename BaseType::PreparedWidget&	widget = this->preparedWidgets[ w ];
+
+						ValueType	widgetX = x / widget.kernelRadius;
+						ValueType	widgetY = y / widget.kernelRadius;
+
+						ValueType	intX = M::floor( widgetX );
+						ValueType	intY = M::floor( widgetY );
+						ValueType	fracX = widgetX - intX;
+						ValueType	fracY = widgetY - intY;
+						int32		i = int( intX );
+						int32		j = int( intY );
+
+						for( int32 di = -1; di <= 1; ++di )
 						{
-							noise += cell( i + di, j + dj, fracX - di, fracY - dj );
+							for( int32 dj = -1; dj <= 1; ++dj )
+							{
+								noise += cell( widget, i + di, j + dj, fracX - di, fracY - dj );
+							}
 						}
 					}
 
-					return noise / (ValueType( 3.0 ) * std::sqrt( variance() ));
+					return noise / (ValueType( 3.0 ) * std::sqrt( this->combinedVariance ));
 				}
 
 
@@ -98,16 +104,16 @@ namespace noise2
 
 				inline
 				ValueType
-				cell( int32 i, int32 j, ValueType x, ValueType y ) const
+				cell( const typename BaseType::PreparedWidget& widget, int32 i, int32 j, ValueType x, ValueType y ) const
 				{
-					uint32	s = morton( i, j ) + this->GetSeed();
+					uint32	s = morton( i, j ) + widget.seed;
 
 					if( s == 0 )
 						s = 1;
 
 					PrngType	prng( s );
 					
-					ValueType	numberOfImpulsesPerCell = this->GetImpulseDensity() * this->GetKernelRadius() * this->GetKernelRadius();
+					ValueType	numberOfImpulsesPerCell = widget.impulseDensity * widget.kernelRadius * widget.kernelRadius;
 					uint32		numberOfImpulses = prng.poisson( numberOfImpulsesPerCell );
 					ValueType	noise = ValueType( 0.0 );
 
@@ -116,14 +122,14 @@ namespace noise2
 						ValueType	xi = prng.uniformNormalized();
 						ValueType	yi = prng.uniformNormalized();
 						ValueType	wi = prng.uniformRange( -1.0, +1.0 );
-						ValueType	F0 = prng.uniformRange( this->GetFrequencyRangeStart(), this->GetFrequencyRangeEnd() );
-						ValueType	omega0 = prng.uniformRange( this->GetAngularRangeStart(), this->GetAngularRangeEnd() );
+						ValueType	F0 = prng.uniformRange( widget.frequencyRangeStart, widget.frequencyRangeEnd );
+						ValueType	omega0 = prng.uniformRange( widget.angularRangeStart, widget.angularRangeEnd );
 						ValueType	xix = x - xi;
 						ValueType	yiy = y - yi;
 
 						if( ((xix * xix) + (yiy * yiy)) < ValueType( 1.0 ) )
 						{
-							noise += wi * gabor( this->GetK(), this->GetA(), F0, omega0, xix * this->GetKernelRadius(), yiy * this->GetKernelRadius() ); // anisotropic
+							noise += wi * gabor( widget.K, widget.a, F0, omega0, xix * widget.kernelRadius, yiy * widget.kernelRadius ); // anisotropic
 						}
 					}
 
@@ -142,19 +148,6 @@ namespace noise2
 					}
 
 					return z;
-				}
-
-				inline
-				ValueType
-				variance() const
-				{
-					ValueType	K = this->GetK();
-					ValueType	a = this->GetA();
-					ValueType	F0 = this->GetF0();
-					ValueType	impulseDensity = this->GetImpulseDensity();
-
-					ValueType	integralGaborFilterSquared = ((K * K) / (ValueType( 4.0 ) * a * a)) * (ValueType( 1.0 ) + M::exp( -(ValueType( 2.0 ) * M::Pi() * F0 * F0) / (a * a) ));
-					return impulseDensity * (ValueType( 1.0 ) / ValueType( 3.0 )) * integralGaborFilterSquared;
 				}
 
 			};

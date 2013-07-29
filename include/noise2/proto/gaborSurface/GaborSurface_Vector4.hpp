@@ -57,75 +57,81 @@ namespace noise2
 				GetValue( ValueType pX, ValueType pY, ValueType pZ,
 						  ValueType nX, ValueType nY, ValueType nZ ) const
 				{
-					pX /= this->GetKernelRadius();
-					pY /= this->GetKernelRadius();
-					pZ /= this->GetKernelRadius();
-
-					ValueType	intX = M::floor( pX );
-					ValueType	intY = M::floor( pY );
-					ValueType	intZ = M::floor( pZ );
-					int32		i = int( intX );
-					int32		j = int( intY );
-					int32		k = int( intZ );
 					ValueType	noise = ValueType( 0.0 );
 
-					typename M::Vector4F	nxV = M::vectorizeOne( nX );
-					typename M::Vector4F	nyV = M::vectorizeOne( nY );
-					typename M::Vector4F	nzV = M::vectorizeOne( nZ );
-					typename M::Vector4F	fracXV = M::vectorizeOne( pX - intX );
-					typename M::Vector4F	fracYV = M::vectorizeOne( pY - intY );
-					typename M::Vector4F	fracZV = M::vectorizeOne( pZ - intZ );
-
-					static VECTOR4_ALIGN( int32		diA[ 28 ] ) = { -1, -1, -1, -1, -1, -1, -1, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0 };
-					static VECTOR4_ALIGN( int32		djA[ 28 ] ) = { -1, -1, -1,  0,  0,  0,  1,  1,  1, -1, -1, -1,  0,  0,  0,  1,  1,  1, -1, -1, -1,  0,  0,  0,  1,  1,  1,  0 };
-					static VECTOR4_ALIGN( int32		dkA[ 28 ] ) = { -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1,  0 };
-
-					typename M::Vector4I		iV = M::vectorizeOne( i );
-					typename M::Vector4I		jV = M::vectorizeOne( j );
-					typename M::Vector4I		kV = M::vectorizeOne( k );
-
-					typename M::Vector4I	diV;
-					typename M::Vector4I	djV;
-					typename M::Vector4I	dkV;
-					typename M::Vector4I	diiV;
-					typename M::Vector4I	djjV;
-					typename M::Vector4I	dkkV;
-					typename M::Vector4F	xV;
-					typename M::Vector4F	yV;
-					typename M::Vector4F	zV;
-					typename M::Vector4I	mortonV;
-					for( int32 m = 0; m < 6; ++m )
+					for( size_t w = 0; w < this->preparedWidgets.size(); ++w )
 					{
-						diV = M::loadFromMemory( diA + (m * 4) );
-						djV = M::loadFromMemory( djA + (m * 4) );
-						dkV = M::loadFromMemory( dkA + (m * 4) );
-						diiV = M::add( diV, iV );
-						djjV = M::add( djV, jV );
-						dkkV = M::add( dkV, kV );
-						xV = M::subtract( fracXV, M::intToFloat( diV ) );
-						yV = M::subtract( fracYV, M::intToFloat( djV ) );
-						zV = M::subtract( fracZV, M::intToFloat( dkV ) );
-						mortonV = mortonVectorized( diiV, djjV, dkkV );
-						
-						noise += cellVectorized( mortonV, xV, yV, zV, nxV, nyV, nzV, M::constFullMaskI() );
-					}
-					{
-						diV = M::loadFromMemory( diA + (6 * 4) );
-						djV = M::loadFromMemory( djA + (6 * 4) );
-						dkV = M::loadFromMemory( dkA + (6 * 4) );
-						diiV = M::add( diV, iV );
-						djjV = M::add( djV, jV );
-						dkkV = M::add( dkV, kV );
-						xV = M::subtract( fracXV, M::intToFloat( diV ) );
-						yV = M::subtract( fracYV, M::intToFloat( djV ) );
-						zV = M::subtract( fracZV, M::intToFloat( dkV ) );
-						mortonV = mortonVectorized( diiV, djjV, dkkV );
-						
-						static VECTOR4_ALIGN( uint32	cell3MaskA[ 4 ] ) = { 0xffffffff, 0xffffffff, 0xffffffff, 0x0 };
-						noise += cellVectorized( mortonV, xV, yV, zV, nxV, nyV, nzV, M::loadFromMemory( cell3MaskA ) );
+						const typename BaseType::PreparedWidget&	widget = this->preparedWidgets[ w ];
+
+						ValueType	widgetPX = pX / widget.kernelRadius;
+						ValueType	widgetPY = pY / widget.kernelRadius;
+						ValueType	widgetPZ = pZ / widget.kernelRadius;
+
+						ValueType	intX = M::floor( widgetPX );
+						ValueType	intY = M::floor( widgetPY );
+						ValueType	intZ = M::floor( widgetPZ );
+						int32		i = int( intX );
+						int32		j = int( intY );
+						int32		k = int( intZ );
+
+						typename M::Vector4F	nxV = M::vectorizeOne( nX );
+						typename M::Vector4F	nyV = M::vectorizeOne( nY );
+						typename M::Vector4F	nzV = M::vectorizeOne( nZ );
+						typename M::Vector4F	fracXV = M::vectorizeOne( widgetPX - intX );
+						typename M::Vector4F	fracYV = M::vectorizeOne( widgetPY - intY );
+						typename M::Vector4F	fracZV = M::vectorizeOne( widgetPZ - intZ );
+
+						static VECTOR4_ALIGN( int32		diA[ 28 ] ) = { -1, -1, -1, -1, -1, -1, -1, -1, -1,  0,  0,  0,  0,  0,  0,  0,  0,  0,  1,  1,  1,  1,  1,  1,  1,  1,  1,  0 };
+						static VECTOR4_ALIGN( int32		djA[ 28 ] ) = { -1, -1, -1,  0,  0,  0,  1,  1,  1, -1, -1, -1,  0,  0,  0,  1,  1,  1, -1, -1, -1,  0,  0,  0,  1,  1,  1,  0 };
+						static VECTOR4_ALIGN( int32		dkA[ 28 ] ) = { -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1, -1,  0,  1,  0 };
+
+						typename M::Vector4I		iV = M::vectorizeOne( i );
+						typename M::Vector4I		jV = M::vectorizeOne( j );
+						typename M::Vector4I		kV = M::vectorizeOne( k );
+
+						typename M::Vector4I	diV;
+						typename M::Vector4I	djV;
+						typename M::Vector4I	dkV;
+						typename M::Vector4I	diiV;
+						typename M::Vector4I	djjV;
+						typename M::Vector4I	dkkV;
+						typename M::Vector4F	xV;
+						typename M::Vector4F	yV;
+						typename M::Vector4F	zV;
+						typename M::Vector4I	mortonV;
+						for( int32 m = 0; m < 6; ++m )
+						{
+							diV = M::loadFromMemory( diA + (m * 4) );
+							djV = M::loadFromMemory( djA + (m * 4) );
+							dkV = M::loadFromMemory( dkA + (m * 4) );
+							diiV = M::add( diV, iV );
+							djjV = M::add( djV, jV );
+							dkkV = M::add( dkV, kV );
+							xV = M::subtract( fracXV, M::intToFloat( diV ) );
+							yV = M::subtract( fracYV, M::intToFloat( djV ) );
+							zV = M::subtract( fracZV, M::intToFloat( dkV ) );
+							mortonV = mortonVectorized( widget, diiV, djjV, dkkV );
+							
+							noise += cellVectorized( widget, mortonV, xV, yV, zV, nxV, nyV, nzV, M::constFullMaskI() );
+						}
+						{
+							diV = M::loadFromMemory( diA + (6 * 4) );
+							djV = M::loadFromMemory( djA + (6 * 4) );
+							dkV = M::loadFromMemory( dkA + (6 * 4) );
+							diiV = M::add( diV, iV );
+							djjV = M::add( djV, jV );
+							dkkV = M::add( dkV, kV );
+							xV = M::subtract( fracXV, M::intToFloat( diV ) );
+							yV = M::subtract( fracYV, M::intToFloat( djV ) );
+							zV = M::subtract( fracZV, M::intToFloat( dkV ) );
+							mortonV = mortonVectorized( widget, diiV, djjV, dkkV );
+							
+							static VECTOR4_ALIGN( uint32	cell3MaskA[ 4 ] ) = { 0xffffffff, 0xffffffff, 0xffffffff, 0x0 };
+							noise += cellVectorized( widget, mortonV, xV, yV, zV, nxV, nyV, nzV, M::loadFromMemory( cell3MaskA ) );
+						}
 					}
 
-					return noise / (ValueType( 3.0 ) * std::sqrt( variance() ));
+					return noise / (ValueType( 3.0 ) * std::sqrt( this->combinedVariance ));
 				}
 
 
@@ -226,7 +232,8 @@ namespace noise2
 
 				inline
 				ValueType
-				cellVectorized( const typename M::Vector4I sV,
+				cellVectorized( const typename BaseType::PreparedWidget& widget,
+								const typename M::Vector4I sV,
 								const typename M::Vector4F pxV, const typename M::Vector4F pyV, const typename M::Vector4F pzV,
 								const typename M::Vector4F nxV, const typename M::Vector4F nyV, const typename M::Vector4F nzV,
 								const typename M::Vector4I cellMaskV ) const
@@ -234,8 +241,8 @@ namespace noise2
 					Compacter	compacter;
 
 					PrngVectorType			prngVector( sV );
-					typename M::Vector4F	impulseDensityV = M::vectorizeOne( this->GetImpulseDensity() );
-					typename M::Vector4F	kernelRadiusV = M::vectorizeOne( this->GetKernelRadius() );
+					typename M::Vector4F	impulseDensityV = M::vectorizeOne( widget.impulseDensity );
+					typename M::Vector4F	kernelRadiusV = M::vectorizeOne( widget.kernelRadius );
 					typename M::Vector4F	numberOfImpulsesPerCellV = M::multiply( impulseDensityV, M::multiply( kernelRadiusV, kernelRadiusV ) );
 					numberOfImpulsesPerCellV = M::divide( numberOfImpulsesPerCellV, M::constTwoF() );
 					typename M::Vector4I	numberOfImpulsesV = prngVector.poisson( numberOfImpulsesPerCellV );
@@ -255,8 +262,8 @@ namespace noise2
 						typename M::Vector4F	xiV = prngVector.uniformNormalized();
 						typename M::Vector4F	yiV = prngVector.uniformNormalized();
 						typename M::Vector4F	ziV = prngVector.uniformNormalized();
-						typename M::Vector4F	F0V = prngVector.uniformRange( this->GetFrequencyRangeStart(), this->GetFrequencyRangeEnd() );
-						typename M::Vector4F	omega0V = prngVector.uniformRange( this->GetAngularRangeStart(), this->GetAngularRangeEnd() );
+						typename M::Vector4F	F0V = prngVector.uniformRange( widget.frequencyRangeStart, widget.frequencyRangeEnd );
+						typename M::Vector4F	omega0V = prngVector.uniformRange( widget.angularRangeStart, widget.angularRangeEnd );
 
 						projection.project( xiV, yiV, ziV );
 						ziV = M::subtract( M::constOneF(), M::abs( ziV ) );
@@ -273,11 +280,12 @@ namespace noise2
 						
 						if( compacter.compact( xiV, yiV, ziV, F0V, omega0V, calcMaskV ) == true )
 						{
-							noiseV = M::add( noiseV, cellPart( xiV, yiV, ziV, F0V, omega0V, calcMaskV ) );
+							noiseV = M::add( noiseV, cellPart( widget, xiV, yiV, ziV, F0V, omega0V, calcMaskV ) );
 						}
 						if( i == maxNumberOfImpulses - 1 )
 						{
-							noiseV = M::add( noiseV, cellPart( compacter.xInputVPrev,
+							noiseV = M::add( noiseV, cellPart( widget,
+															   compacter.xInputVPrev,
 															   compacter.yInputVPrev,
 															   compacter.wiVPrev,
 															   compacter.F0VPrev,
@@ -302,15 +310,16 @@ namespace noise2
 
 				inline
 				typename M::Vector4F
-				cellPart( const typename M::Vector4F& xInputV, const typename M::Vector4F& yInputV,
+				cellPart( const typename BaseType::PreparedWidget& widget,
+						  const typename M::Vector4F& xInputV, const typename M::Vector4F& yInputV,
 						  const typename M::Vector4F& wiV, const typename M::Vector4F& F0V,
 						  const typename M::Vector4F& omega0V, const typename M::Vector4I& calcMaskV ) const
 				{
-					typename M::Vector4F	kernelRadiusV = M::vectorizeOne( this->GetKernelRadius() );
+					typename M::Vector4F	kernelRadiusV = M::vectorizeOne( widget.kernelRadius );
 					typename M::Vector4F	xV = M::multiply( xInputV, kernelRadiusV );
 					typename M::Vector4F	yV = M::multiply( yInputV, kernelRadiusV );
-					typename M::Vector4F	kV = M::vectorizeOne( this->GetK() );
-					typename M::Vector4F	aV = M::vectorizeOne( this->GetA() );
+					typename M::Vector4F	kV = M::vectorizeOne( widget.K );
+					typename M::Vector4F	aV = M::vectorizeOne( widget.a );
 
 					typename M::Vector4F	gaborV = gaborVectorized( kV, aV, F0V, omega0V, xV, yV );
 					gaborV = M::multiply( wiV, gaborV );
@@ -321,11 +330,11 @@ namespace noise2
 
 				inline
 				typename M::Vector4I
-				mortonVectorized( const typename M::Vector4I& xV, const typename M::Vector4I& yV, const typename M::Vector4I& zV ) const
+				mortonVectorized( const typename BaseType::PreparedWidget& widget, const typename M::Vector4I& xV, const typename M::Vector4I& yV, const typename M::Vector4I& zV ) const
 				{
 					typename M::Vector4I		mV = M::constZeroI();
 					typename M::Vector4I		oneV = M::constOneI();
-					typename M::Vector4I		seedV = M::vectorizeOne( this->GetSeed() );
+					typename M::Vector4I		seedV = M::vectorizeOne( widget.seed );
 
 					for( uint32 i = 0; i < (2 * CHAR_BIT); ++i )
 					{
@@ -387,19 +396,6 @@ namespace noise2
 					sinusoidalCarrier = M::cos( sinusoidalCarrier );
 
 					return M::multiply( gaussianEnvelop, sinusoidalCarrier );
-				}
-
-				inline
-				ValueType
-				variance() const
-				{
-					ValueType	K = this->GetK();
-					ValueType	a = this->GetA();
-					ValueType	F0 = this->GetF0();
-					ValueType	impulseDensity = this->GetImpulseDensity();
-
-					ValueType	integralGaborFilterSquared = ((K * K) / (ValueType( 4.0 ) * a * a)) * (ValueType( 1.0 ) + M::exp( -(ValueType( 2.0 ) * M::Pi() * F0 * F0) / (a * a) ));
-					return impulseDensity * (ValueType( 1.0 ) / ValueType( 3.0 )) * integralGaborFilterSquared;
 				}
 
 				inline

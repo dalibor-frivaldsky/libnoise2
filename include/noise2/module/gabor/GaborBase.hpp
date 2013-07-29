@@ -1,7 +1,12 @@
 #pragma once
 
 
+// Std C++
+#include <vector>
+
+
 // libnoise2
+#include <noise2/Platform.hpp>
 #include <noise2/math/Math.hpp>
 
 
@@ -174,252 +179,183 @@ namespace noise2
 
 
 
+			public:
+
+				struct Widget
+				{
+
+					inline
+					Widget():
+					  K( Defaults::K() ),
+					  a( Defaults::a() ),
+					  F0( Defaults::F0() ),
+					  frequencySpread( Defaults::frequencySpread() ),
+					  omega0( Defaults::omega0() ),
+					  angularSpread( Defaults::angularSpread() ),
+					  numberOfImpulses( Defaults::numberOfImpulses() ),
+					  seed( Defaults::seed() )
+					{
+					}
+
+					ValueType		K;
+					ValueType		a;
+					ValueType		F0;
+					ValueType		frequencySpread;
+					ValueType		omega0;
+					ValueType		angularSpread;
+					ValueType		numberOfImpulses;
+					uint32			seed;
+
+				};
+
+
+
 			protected:
 
-				ValueType		K;
-				ValueType		a;
-				ValueType		F0;
-				ValueType		frequencySpread;
-				ValueType		omega0;
-				ValueType		angularSpread;
-				ValueType		numberOfImpulses;
-				unsigned int	period;
-				unsigned int	seed;
+				struct PreparedWidget
+				{
 
-				ValueType		frequencyRangeStart;
-				ValueType		frequencyRangeEnd;
-				ValueType		angularRangeStart;
-				ValueType		angularRangeEnd;
+					inline
+					PreparedWidget( const Widget& widget ):
+					  K( widget.K ),
+					  a( widget.a ),
+					  F0( widget.F0 ),
+					  frequencySpread( widget.frequencySpread ),
+					  omega0( widget.omega0 ),
+					  angularSpread( widget.angularSpread ),
+					  numberOfImpulses( widget.numberOfImpulses ),
+					  seed( widget.seed ),
+					  frequencyRangeStart( ValueType( 0.0 ) ),
+					  frequencyRangeEnd( ValueType( 0.0 ) ),
+					  angularRangeStart( ValueType( 0.0 ) ),
+					  angularRangeEnd( ValueType( 0.0 ) ),
+					  kernelRadius( ValueType( 0.0 ) ),
+					  impulseDensity( ValueType( 0.0 ) ),
+					  variance( ValueType( 0.0 ) )
+					{
+						recalculateKernelProperties();
+						recalculateFrequencyProperties();
+						recalculateAngularProperties();
+						recalculateVariance();
+					}
 
-				ValueType		kernelRadius;
-				ValueType		impulseDensity;
+
+					ValueType		K;
+					ValueType		a;
+					ValueType		F0;
+					ValueType		frequencySpread;
+					ValueType		omega0;
+					ValueType		angularSpread;
+					ValueType		numberOfImpulses;
+					uint32			seed;
+
+					ValueType		frequencyRangeStart;
+					ValueType		frequencyRangeEnd;
+					ValueType		angularRangeStart;
+					ValueType		angularRangeEnd;
+
+					ValueType		kernelRadius;
+					ValueType		impulseDensity;
+					ValueType		variance;
+
+
+
+				private:
+
+					void
+					recalculateKernelProperties()
+					{
+						kernelRadius = std::sqrt( -std::log( ValueType( 0.05 ) ) / math::Math< ValueType >::Pi() ) / a;
+						impulseDensity = numberOfImpulses / (math::Math< ValueType >::Pi() * kernelRadius * kernelRadius);
+					}
+
+					void
+					recalculateFrequencyProperties()
+					{
+						frequencyRangeStart = F0 - frequencySpread / ValueType( 2.0 );
+						frequencyRangeEnd = F0 + frequencySpread / ValueType( 2.0 );
+					}
+
+					void
+					recalculateAngularProperties()
+					{
+						angularRangeStart = omega0 - angularSpread / ValueType( 2.0 );
+						angularRangeEnd = omega0 + angularSpread / ValueType( 2.0 );
+					}
+
+					void
+					recalculateVariance()
+					{
+						ValueType	integralGaborFilterSquared = ((K * K) / (ValueType( 4.0 ) * a * a)) * (ValueType( 1.0 ) + math::Math< ValueType >::exp( -(ValueType( 2.0 ) * math::Math< ValueType >::Pi() * F0 * F0) / (a * a) ));
+						variance = impulseDensity * (ValueType( 1.0 ) / ValueType( 3.0 )) * integralGaborFilterSquared;
+					}
+
+				};
+
+				std::vector< PreparedWidget >		preparedWidgets;
+				ValueType							combinedVariance;
 
 
 
 			public:
 
 				GaborBase():
-				  K( Defaults::K() ),
-				  a( Defaults::a() ),
-				  F0( Defaults::F0() ),
-				  frequencySpread( Defaults::frequencySpread() ),
-				  omega0( Defaults::omega0() ),
-				  angularSpread( Defaults::angularSpread() ),
-				  numberOfImpulses( Defaults::numberOfImpulses() ),
-				  period( Defaults::period() ),
-				  seed( Defaults::seed() ),
-				  kernelRadius( ValueType( 0.0 ) ),
-				  impulseDensity( ValueType( 0.0 ) )
+				  combinedVariance( 1.0 )
 				{
-					recalculateKernelProperties();
-					recalculateFrequencyProperties();
-					recalculateAngularProperties();
-				}
-
-				inline
-				ValueType
-				GetK() const
-				{
-					return K;
+					AddWidget( Widget() );
 				}
 
 				inline
 				void
-				SetK( const ValueType& K )
+				AddWidget( const Widget& widget )
 				{
-					this->K = K;
+					preparedWidgets.push_back( PreparedWidget( widget ) );
+					recalculateCombinedVariance();
 				}
 
 				inline
-				ValueType
-				GetA() const
+				Widget
+				GetWidget( uint32 index ) const
 				{
-					return a;
-				}
+					Widget	widget;
 
-				inline
-				void
-				SetA( const ValueType& a )
-				{
-					this->a = a;
-					recalculateKernelProperties();
-				}
+					widget.K = preparedWidgets[ index ].K;
+					widget.a = preparedWidgets[ index ].a;
+					widget.F0 = preparedWidgets[ index ].F0;
+					widget.frequencySpread = preparedWidgets[ index ].frequencySpread;
+					widget.omega0 = preparedWidgets[ index ].omega0;
+					widget.angularSpread = preparedWidgets[ index ].angularSpread;
+					widget.numberOfImpulses = preparedWidgets[ index ].numberOfImpulses;
+					widget.seed = preparedWidgets[ index ].seed;
 
-				inline
-				ValueType
-				GetF0() const
-				{
-					return F0;
+					return widget;
 				}
 
 				inline
 				void
-				SetF0( const ValueType& F0 )
+				SetWidget( uint32 index, const Widget& widget )
 				{
-					this->F0 = F0;
-					recalculateFrequencyProperties();
+					preparedWidgets[ index ] = PreparedWidget( widget );
+					recalculateCombinedVariance();
 				}
 
-				inline
-				ValueType
-				GetFrequancySpread() const
-				{
-					return frequencySpread;
-				}
-
-				inline
-				void
-				SetFrequencySpread( const ValueType& frequencySpread )
-				{
-					this->frequencySpread = frequencySpread;
-					recalculateFrequencyProperties();
-				}
-
-				inline
-				ValueType
-				GetOmega0() const
-				{
-					return omega0;
-				}
-
-				inline
-				void
-				SetOmega0( const ValueType& omega0 )
-				{
-					this->omega0 = omega0;
-					recalculateAngularProperties();
-				}
-
-				inline
-				ValueType
-				GetAngularSpread() const
-				{
-					return angularSpread;
-				}
-
-				inline
-				void
-				SetAngularSpread( const ValueType& angularSpread )
-				{
-					this->angularSpread = angularSpread;
-					recalculateAngularProperties();
-				}
-
-				inline
-				ValueType
-				GetNumberOfImpulses() const
-				{
-					return numberOfImpulses;
-				}
-
-				inline
-				void
-				SetNumberOfImpulses( const ValueType& numberOfImpulses )
-				{
-					this->numberOfImpulses = numberOfImpulses;
-					recalculateKernelProperties();
-				}
-
-				// TODO implementd periodic noise
-				/*
-				inline
-				unsigned int
-				GetPeriod() const
-				{
-					return period;
-				}
-
-				inline
-				void
-				SetPeriod( const unsigned int& period )
-				{
-					this->period = period;
-				}
-				*/
-
-				inline
-				unsigned int
-				GetSeed() const
-				{
-					return seed;
-				}
-
-				inline
-				void
-				SetSeed( const unsigned int& seed )
-				{
-					this->seed = seed;
-				}
-
-				inline
-				ValueType
-				GetFrequencyRangeStart() const
-				{
-					return frequencyRangeStart;
-				}
-
-				inline
-				ValueType
-				GetFrequencyRangeEnd() const
-				{
-					return frequencyRangeEnd;
-				}
-
-				inline
-				ValueType
-				GetAngularRangeStart() const
-				{
-					return angularRangeStart;
-				}
-
-				inline
-				ValueType
-				GetAngularRangeEnd() const
-				{
-					return angularRangeEnd;
-				}
-
-				inline
-				ValueType
-				GetKernelRadius() const
-				{
-					return kernelRadius;
-				}
-
-				inline
-				ValueType
-				GetImpulseDensity() const
-				{
-					return impulseDensity;
-				}
-
-
+			
 
 			private:
 
 				void
-				recalculateKernelProperties()
+				recalculateCombinedVariance()
 				{
-					kernelRadius = std::sqrt( -std::log( ValueType( 0.05 ) ) / math::Math< ValueType >::Pi() ) / a;
-					impulseDensity = numberOfImpulses / (math::Math< ValueType >::Pi() * kernelRadius * kernelRadius);
-				}
+					combinedVariance = ValueType( 0.0 );
 
-				void
-				recalculateFrequencyProperties()
-				{
-					frequencyRangeStart = F0 - frequencySpread / ValueType( 2.0 );
-					frequencyRangeEnd = F0 + frequencySpread / ValueType( 2.0 );
-				}
-
-				void
-				recalculateAngularProperties()
-				{
-					angularRangeStart = omega0 - angularSpread / ValueType( 2.0 );
-					angularRangeEnd = omega0 + angularSpread / ValueType( 2.0 );
+					for( size_t i = 0; i < preparedWidgets.size(); ++i )
+					{
+						combinedVariance += preparedWidgets[ i ].variance;
+					}
 				}
 
 			};
-
+			
 		}
 
 	}
